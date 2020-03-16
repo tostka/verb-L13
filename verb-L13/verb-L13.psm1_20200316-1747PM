@@ -1,0 +1,55 @@
+# verb-L13.psm1
+
+
+  <#
+  .SYNOPSIS
+  verb-L13 - Powershell Lync 2013 generic functions module
+  .NOTES
+  Version     : 1.0.0.0
+  Author      : Todd Kadrie
+  Website     :	https://www.toddomation.com
+  Twitter     :	@tostka
+  CreatedDate : 3/16/2020
+  FileName    : verb-L13.psm1
+  License     : MIT
+  Copyright   : (c) 3/16/2020 Todd Kadrie
+  Github      : https://github.com/tostka
+  AddedCredit : REFERENCE
+  AddedWebsite:	REFERENCEURL
+  AddedTwitter:	@HANDLE / http://twitter.com/HANDLE
+  REVISIONS
+  * 4:59 PM 3/16/2020 1.0.0.0public cleanup
+  * 11:38 AM 12/30/2019 ran vsc alias-expan
+  * 10:14 AM 11/20/2019 rl13: added cred support
+  * 3:16 PM 5/14/2019 added lab lyncadminpool support
+  * 12:16 PM 5/6/2019 shfited to leverage this and added cl13,rl13 & dl13 aliases.
+  * 3:03 PM 5/14/2019 add lab pool spec
+  * 3:04 PM 3/4/2019 rough-in a full set of connect/disconnect/reconnect-l13()'s  NON-FUNCTIONAL, SID profile.ps1 IS SETTING INCLUDE DIR TO PROFILE SID DIR, INSTEAD OF C:\USR\WORK\EXCH\SCRIPTS\.
+  * 1:02 PM 11/7/2018 updated Disconnect-PssBroken
+  # 10:37 AM 9/12/2018 initial port (thot I had it done before - it's in profile)
+  .DESCRIPTION
+  verb-L13 - Powershell Lync 2013 generic functions module
+  .LINK
+  https://github.com/tostka/verb-L13
+  #>
+
+
+$script:ModuleRoot = $PSScriptRoot ; 
+$script:ModuleVersion = (Import-PowerShellDataFile -Path (get-childitem $script:moduleroot\*.psd1).fullname).moduleversion ; 
+
+#Get public and private function definition files.
+$functionFolders = @('Public', 'Internal', 'Classes') ;
+ForEach ($folder in $functionFolders) {
+    $folderPath = Join-Path -Path $PSScriptRoot -ChildPath $folder ;
+    If (Test-Path -Path $folderPath) {
+        Write-Verbose -Message "Importing from $folder" ;
+        $functions = Get-ChildItem -Path $folderPath -Filter '*.ps1'  ;
+        ForEach ($function in $functions) {
+            Write-Verbose -Message "  Importing $($function.BaseName)" ;
+            . $($function.FullName) ;
+        } ;
+    } ;
+} ;
+$publicFunctions = (Get-ChildItem -Path "$PSScriptRoot\Public" -Filter '*.ps1').BaseName ;
+Export-ModuleMember -Function $publicFunctions -Alias * ; 
+

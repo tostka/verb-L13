@@ -1,0 +1,660 @@
+﻿# verb-L13.psm1
+
+
+  <#
+  .SYNOPSIS
+  verb-L13 - Powershell Lync 2013 generic functions module
+  .NOTES
+  Version     : 1.0.0.0.0.0.0.0
+  Author      : Todd Kadrie
+  Website     :	https://www.toddomation.com
+  Twitter     :	@tostka
+  CreatedDate : 3/16/2020
+  FileName    : verb-L13.psm1
+  License     : MIT
+  Copyright   : (c) 3/16/2020 Todd Kadrie
+  Github      : https://github.com/tostka
+  AddedCredit : REFERENCE
+  AddedWebsite:	REFERENCEURL
+  AddedTwitter:	@HANDLE / http://twitter.com/HANDLE
+  REVISIONS
+  * 4:59 PM 3/16/2020 1.0.0.0public cleanup
+  * 11:38 AM 12/30/2019 ran vsc alias-expan
+  * 10:14 AM 11/20/2019 rl13: added cred support
+  * 3:16 PM 5/14/2019 added lab lyncadminpool support
+  * 12:16 PM 5/6/2019 shfited to leverage this and added cl13,rl13 & dl13 aliases.
+  * 3:03 PM 5/14/2019 add lab pool spec
+  * 3:04 PM 3/4/2019 rough-in a full set of connect/disconnect/reconnect-l13()'s  NON-FUNCTIONAL, SID profile.ps1 IS SETTING INCLUDE DIR TO PROFILE SID DIR, INSTEAD OF C:\USR\WORK\EXCH\SCRIPTS\.
+  * 1:02 PM 11/7/2018 updated Disconnect-PssBroken
+  # 10:37 AM 9/12/2018 initial port (thot I had it done before - it's in profile)
+  .DESCRIPTION
+  verb-L13 - Powershell Lync 2013 generic functions module
+  .LINK
+  https://github.com/tostka/verb-L13
+  #>
+
+
+$script:ModuleRoot = $PSScriptRoot ;
+$script:ModuleVersion = (Import-PowerShellDataFile -Path (get-childitem $script:moduleroot\*.psd1).fullname).moduleversion ;
+
+#*======v FUNCTIONS v======
+
+
+
+#*------v Add-LMSRemote.ps1 v------
+Function Add-LMSRemote {
+    <#
+    .SYNOPSIS
+    Add-LMSRemote - Remote Lync Mgmt Shell
+    .NOTES
+    Hybrid of dsolodow's & my remote code
+    Author: Todd Kadrie
+    Website:	https://www.toddomation.com
+    Twitter:	https://twitter.com/tostka
+    REVISIONS   :
+    # 10:47 AM 9/12/2018 grabbed from tsksid-incl-ServerApp.ps1
+    # 1:19 PM 4/6/2016 get-admincred now outputs to $global:SIDcred, updated splat
+    # 1:16 PM 8/19/2015
+    .LINK
+    https://github.com/dsolodow/IndyPoSH/blob/master/Profile.ps1
+    #>
+    # provide a fault-tolerant pool connection for LMS
+    switch ($env:USERDOMAIN){
+        "$($TORMeta['legacyDomain'])" {$LyncAdminPool=$TORMeta['LyncAdminPool'] }
+        "$($TOLMeta['legacyDomain'])" {$LyncAdminPool=$TOLMeta['LyncAdminPool'] }
+    } ;
+    if(test-connection $LyncAdminPool -count 1 -quiet){
+      $LyncFE = $LyncAdminPool ;
+    } else {
+      $LyncFE = (Get-LyncServerInSite) ;
+    } ;
+    $LyncConnectionURI  = "https://$($LyncFE)/OcsPowershell"  ;
+    If ( (!(Get-PSSession -Name 'Lync2013' -ErrorAction SilentlyContinue)) -AND (Test-Connection $LyncFE -count 1)) {
+        #1:38 PM 8/19/2015 only prompt if it's not running SID
+        $sesOpts = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck ;
+        $LMSsplat=@{ConnectionURI=$LyncConnectionURI; name='Lync2013';SessionOption=$sesOpts};
+        Get-AdminCred ;
+        $LMSsplat.Add("Credential",$global:SIDcred);
+        Add-PSTitleBar 'LMS' ;
+        # set color scheme to White text on Black
+        $HOST.UI.RawUI.BackgroundColor = "Black" ; $HOST.UI.RawUI.ForegroundColor = "White" ;
+        write-host "Adding LMS (connecting to $($LyncConnectionURI))..."
+        $Session = New-PSSession @LMSSplat
+        Import-PSSession $Session ;
+        $Session | Select-Object ComputerName,Availability | format-table -auto |out-default;
+    } ;
+}
+
+#*------^ Add-LMSRemote.ps1 ^------
+
+#*------v Connect-L13.ps1 v------
+Function Connect-L13 {
+    <#
+    .SYNOPSIS
+    Connect-L13 - Setup Remote Exch2010 Mgmt Shell connection
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://toddomation.com
+    Twitter:	http://twitter.com/tostka
+    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
+    Website:
+    REVISIONS   :
+    * # 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
+    * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
+    * 2:37 PM 12/6/2016 ported to local LMSRemote
+    * 2/10/14 posted version
+    $Credential can leverage a global: $Credential = $global:SIDcred
+    .DESCRIPTION
+    Connect-L13 - Setup Remote Exch2010 Mgmt Shell connection
+    .PARAMETER  Credential
+    Credential object
+    .INPUTS
+    None. Does not accepted piped input.
+    .OUTPUTS
+    None. Returns no objects or output.
+    .EXAMPLE
+    # -----------
+    try{
+        $reqMods="connect-L13;Reconnect-L13;Disconnect-L13;Disconnect-PssBroken;Add-PSTitleBar".split(";") ;
+        $reqMods | % {if( !(test-path function:$_ ) ) {write-error "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Missing $($_) function. EXITING." } } ;
+        Reconnect-L13 ;
+    } Catch {
+        $msg=": Error Details: $($_)";
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): FAILURE!" ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): Error in $($_.InvocationInfo.ScriptName)." ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): -- Error information" ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): Line Number: $($_.InvocationInfo.ScriptLineNumber)" ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): Offset: $($_.InvocationInfo.OffsetInLine)" ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): Command: $($_.InvocationInfo.MyCommand)" ;
+        Write-Error "$((get-date).ToString('yyyyMMdd HH:mm:ss')): Line: $($_.InvocationInfo.Line)" ;
+        Write-Error  "$((get-date).ToString('yyyyMMdd HH:mm:ss')): $($msg)";
+        Cleanup ;
+        #Exit ;
+    } ;
+    .LINK
+    #>
+
+    Param(
+        [Parameter(HelpMessage='Credential object')][System.Management.Automation.PSCredential]$Credential
+    )  ;
+
+    # set the below to OP to prefix mounted commands like: get-OLMailbox == local get-Mailbox command
+    # set to $null/blank to not perform prefixing
+    $CommandPrefix = $null ;
+    # "OP"
+    # provide a fault-tolerant pool connection for LMS
+    switch ($env:USERDOMAIN){
+        "$($TORMeta['legacyDomain'])" {$LyncAdminPool=$TORMeta['LyncAdminPool'] }
+        "$($TOLMeta['legacyDomain'])" {$LyncAdminPool=$TOLMeta['LyncAdminPool'] }
+    } ;
+    if(test-connection $LyncAdminPool -count 1 -quiet){
+      $LyncFE = $LyncAdminPool ;
+    } else {
+      $LyncFE = (Get-LyncServerInSite) ;
+    } ;
+    $LyncConnectionURI  = "https://$($LyncFE)/OcsPowershell"  ;
+    If (Test-Connection $LyncFE -count 1) {
+        write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncFE))..." ;
+        # splat to open a session - # stock 'PSLanguageMode=Restricted' powershell IIS Webpool
+
+        $sesOpts = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck ;
+        $LMSsplat=@{ConnectionURI=$LyncConnectionURI; name='Lync2013';SessionOption=$sesOpts};
+
+        # 12/8/2016 add  credential support
+        if($Credential){
+            $LMSsplat.Add("Credential",$Credential) ;
+        } elseif($global:SIDcred) {
+            $LMSsplat.Add("Credential",$global:SIDcred);
+        } else {
+            Get-AdminCred ;
+        } ;  ;
+        # -Authentication Basic only if specif needed: for Ex configured to connect via IP vs hostname)
+        if($Global:L13Sess = New-PSSession @LMSSplat){
+            write-verbose -verbose:$true  "$((get-date).ToString('HH:mm:ss')):Importing Lync 2013 Module" ;
+            if($CommandPrefix){
+                write-verbose -verbose:$true  "$((get-date).ToString("HH:mm:ss")):Note: Prefixing this Modules Cmdlets as [verb]-$($CommandPrefix)[noun]" ;
+                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -Prefix $CommandPrefix -AllowClobber) -Global -Prefix $CommandPrefix -PassThru -DisableNameChecking   ;
+            } else {
+                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
+            } ;
+            # add titlebar tag
+            Add-PSTitleBar 'LMS' ;
+            $Global:L13IsDehydrated=$true ;
+            write-verbose -verbose:$true "$(($Global:L13Sess | select ComputerName,Availability,State,ConfigurationName | format-table -auto |out-string).trim())" ;
+            # drop returning an object; we're using a global variable now
+        } else {
+            write-host -foregroundcolor red "$((get-date).ToString('HH:mm:ss')):Unable to open PSSession w`n$(($LMSSplat|out-string).trim())" ;
+        } ;
+    } else {
+        throw "Unable to ping:$($LyncFE)! ABORTING!" ;
+    } ;
+} ; #*------^ END Function Connect-L13 ^------
+# 12:14 PM 5/6/2019
+if(!(get-alias cl13 -ea 0)){ set-alias -name cl13 -value Connect-L13 }
+
+#*------^ Connect-L13.ps1 ^------
+
+#*------v Disconnect-L13.ps1 v------
+Function Disconnect-L13 {
+    <#
+    .SYNOPSIS
+    Disconnect-L13 - Clear Remote L13 Mgmt Shell connection
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://toddomation.com
+    Twitter:	http://twitter.com/tostka
+    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
+    Website:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    REVISIONS   :
+    * 8:01 AM 11/1/2017 added Remove-PSTitlebar 'LMS', and Disconnect-PssBroken to the bottom - to halt growth of unrepaired broken connections. Updated example to pretest for reqMods
+    * 12:54 PM 12/9/2016 cleaned up, add pshelp
+    * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
+    * 2:37 PM 12/6/2016 ported to local LMSRemote
+    * 2/10/14 posted version
+    .DESCRIPTION
+    Disconnect-L13 - Clear Remote L13 Mgmt Shell connection
+    .INPUTS
+    None. Does not accepted piped input.
+    .OUTPUTS
+    None. Returns no objects or output.
+    .EXAMPLE
+    $reqMods="Remove-PSTitlebar".split(";") ;
+    $reqMods | % {if( !(test-path function:$_ ) ) {write-error "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Missing $($_) function. EXITING." } } ;
+    Disconnect-L13 ;
+    .LINK
+    #>
+    $Global:L13Mod | Remove-Module -Force ;
+    $Global:L13Sess | Remove-PSSession ;
+    # 7:56 AM 11/1/2017 remove titlebar tag
+    Remove-PSTitlebar 'LMS' ;
+    # kill any other sessions using my distinctive name; add verbose, to ensure they're echo'd that they were missed
+    Get-PSSession |Where-Object {$_.name -eq 'Lync2013'} | Remove-PSSession -verbose ;
+    Disconnect-PssBroken ;
+} ; #*------^ END Function Disconnect-L13 ^------
+# 11:55 AM 5/6/2019 alias to purge script from tsksid-incl-ServerApp.ps1
+if(!(get-alias Disconnect-LMSR -ea 0)){ set-alias -name Disconnect-LMSR -value Disconnect-L13 } ;
+# 12:14 PM 5/6/2019
+if(!(get-alias dl13 -ea 0)){ set-alias -name dl13 -value Disconnect-L13 }
+
+#*------^ Disconnect-L13.ps1 ^------
+
+#*------v Disconnect-PssBroken.ps1 v------
+Function Disconnect-PssBroken {
+    <#
+    .SYNOPSIS
+    Disconnect-PssBroken - Remove all local broken PSSessions
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://tinstoys.blogspot.com
+    Twitter:	http://twitter.com/tostka
+    REVISIONS   :
+    * 12:56 PM 11/7/2f018 fix typo $s.state.value, switched tests to the strings, over values (not sure worked at all)
+    * 1:50 PM 12/8/2016 initial version
+    .DESCRIPTION
+    Disconnect-PssBroken - Remove all local broken PSSessions
+    .INPUTS
+    None. Does not accepted piped input.
+    .OUTPUTS
+    None. Returns no objects or output.
+    .EXAMPLE
+    Disconnect-PssBroken ;
+    .LINK
+    #>
+    Get-PsSession |Where-Object{$_.State -ne 'Opened' -or $_.Availability -ne 'Available'} | Remove-PSSession -Verbose ;
+}
+
+#*------^ Disconnect-PssBroken.ps1 ^------
+
+#*------v enable-Lync.ps1 v------
+function enable-Lync {
+  <#
+  .SYNOPSIS
+  enable-Lync - obsolete Lync-enable function, subsuemed by enable-luser.ps1 by 7:37 AM 4/30/2015
+  .NOTES
+  Author: Todd Kadrie
+  Website:	https://www.toddomation.com
+  Twitter:	https://twitter.com/tostka
+
+  REVISIONS   :
+  * 7:38 AM 4/30/2015 not sure of the origin date, but by 7:38 AM 4/30/2015 it's not the current enable-luser.ps1 version
+  .PARAMETER  uid
+  User SamAccountName or UPN
+  .INPUTS
+  None. Does not accepted piped input.
+  .OUTPUTS
+  None. Returns no objects or output.
+  .EXAMPLE
+  enable-Lync -uid kadrits -whatif
+  .LINK
+  #>
+  PARAM(
+  [parameter(Mandatory=$true)]
+  [alias("u")]
+  [string] $uid=$(Read-Host -prompt "Specfify UID to be Lync-enabled[SameAccountName]")
+  ) ;
+
+  $UCsettings=@{
+    registrarpool=$TORMeta['o365_OPDomain'] ; 
+    sipaddresstype="EmailAddress" ; 
+    sipdomain=$TORMeta['o365_OPDomain'] ; 
+  } ; 
+  $user=(get-aduser $uid).userprincipalname.tostring() ;
+  $user;
+  if ($user) {
+    $error.clear() ;
+    enable-csuser -identity "$user" @Ucsettings -whatif;
+    if($error.count -eq 0) {
+          write-verbose -verbose:$true "Enabling $user...";
+          enable-csuser -identity "$user" @Ucsettings #-whatif ;
+          write-verbose -verbose:$true "$user Settings:";
+          $luser = get-csuser $uid ;
+          $luser| Select-Object DisplayName,LineURI,SamAccountName,WindowsEmailAddress,HomeServer| Format-List;
+          write-verbose -verbose:$true "$user EffectivePolicy...:";
+         $luser | Get-CsEffectivePolicy ;
+         write-verbose -verbose:$true "$user PoolmachinesOrder...:";
+          $luser | Get-CsUserPoolInfo | Select-Object -Expand PrimaryPoolMachinesInPreferredOrder ;
+
+    } else {
+      Throw "Whatif test failed,`n$error.`nRecheck your specification!. Exiting..." ;
+    };
+  } else {
+    write-warning "$uid is not a vaild samacctname. Exiting..." ;
+    exit
+  } ;
+}
+
+#*------^ enable-Lync.ps1 ^------
+
+#*------v Get-LyncServerInSite.ps1 v------
+Function Get-LyncServerInSite {
+  <#
+  .SYNOPSIS
+  Get-LyncServerInSite - function uses an ADSI DirectorySearcher to search the current Active Directory site for Lync servers. Returns all local servers
+  .NOTES
+  Author: Flaphead
+  Website:	http://blog.flaphead.com/?s=get-lyncserver
+
+  REVISIONS   :
+
+  2/28/2012 - web version
+
+  .INPUTS
+  None. Does not accepted piped input.
+  .OUTPUTS
+  Returns a ConnectionURL to a random local Lync FrontEnd server (in the local AD site?).
+  What it's doing is grabbing the AD group named 'RTCHSUniversalServices', which contains the DN to the local Lync FEs
+  .EXAMPLE
+  .\Get-LyncServerInSite
+  Return a list of all local Exchange 2010 servers
+  .EXAMPLE
+  .\ping (Get-LyncServerInSite)[0].fqdn
+  Ping the first server on the returned list
+  .LINK
+  #>
+    # building our way toward grabbing the AD group named 'RTCHSUniversalServices', which contains the DN to the local Lync FEs, queried using ADSI LDAP qry
+    $currentdom= [System.DirectoryServices.ActiveDirectory.Domain]::getcurrentdomain() ;
+    $Forest= $currentdom.Forest.ToString() ;
+    $ForestDomain= $Forest ;
+    $Forest = $Forest.Replace(".", ",DC=") ;
+    $Forest= "DC=" + $Forest ;
+    $Dom= "LDAP://" ;
+    $Dom+= $Forest ;
+    $Root= New-Object DirectoryServices.DirectoryEntry $Dom ;
+    $Filter= "(&(ObjectCategory=group)(name=*RTCHSUniversalServices*))" ;
+    $selector= New-Object DirectoryServices.DirectorySearcher $Filter ;
+    $selector.PageSize   = 1000 ;
+    $selector.SearchRoot = $root ;
+    $objs= $selector.findall() ;
+    $tmpGroup= $objs | Select-Object Path -First 1 ;
+    $Group= [ADSI]$tmpGroup.Path ;
+    $GrpMembers= $Group.Member ;
+    <# 1:52 PM 8/24/2015 at this poin, the hosting dom is in the member DN's:
+   $grpmembers
+      CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
+      CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
+      CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
+    #>
+    $UserDom=$($env:userdnsdomain).tolower ;
+    $LyncDom=($grpmembers | get-random).split(",")[5,6,7,8] -join "." -replace "DC=",""
+    $grpCnt= $GrpMembers.Count ;
+    $LyncServerList = @() ;
+    ForEach($tmpMember in $GrpMembers){
+      $tmpADSI = "LDAP://" + $tmpMember ;
+      $tmpA    = [ADSI]$tmpADSI ;
+      If($tmpA.objectClass -contains "computer"){$LyncServerList += $tmpA.Name} ;
+    }  ;
+    $LyncServerList = $LyncServerList | Sort-Object ;
+    $tmpNumber = Get-Random -Minimum 0 -Maximum $LyncServerList.Count ;
+    $LyncServer = $LyncServerList[$tmpNumber] ;
+    if(test-connection $($LyncServer + "." + $ForestDomain) -Count 1 -quiet) {
+        $LyncServer = $LyncServer + "." + $ForestDomain ;
+    } elseif(test-connection $($LyncServer + "." + $LyncDom ) -Count 1 -quiet) {
+        $LyncServer = $LyncServer + "." + $LyncDom ;
+    } else {
+        write-error "Failed to locate Domain for $LyncServer" ;
+    }  ;
+    
+    write-output $LyncServer ;
+}
+
+#*------^ Get-LyncServerInSite.ps1 ^------
+
+#*------v load-LMS.ps1 v------
+function load-LMS {
+  <#
+  .SYNOPSIS
+  Checks local machine for registred Lync LMS, and then loads found
+  .NOTES
+  Author: Todd Kadrie
+  Website:	http://tinstoys.blogspot.com
+  Twitter:	http://twitter.com/tostka
+  REVISIONS   :
+  vers: 10:43 AM 1/14/2015 fixed return & syntax expl to true/false
+  vers: 10:20 AM 12/10/2014 moved commentblock into function
+  vers: 11:40 AM 11/25/2014 adapted to Lync
+  ers: 2:05 PM 7/19/2013 typo fix in 2013 code
+  vers: 1:46 PM 7/19/2013
+  .INPUTS
+  None.
+  .OUTPUTS
+  Outputs Lync Revision
+  .EXAMPLE
+  $LMSLoaded = load-LMS ; Write-Debug "`$LMSLoaded: $LMSLoaded" ;
+  #>
+  # check registred v loaded ;
+  $ModsReg=Get-Module -ListAvailable;
+  $ModsLoad=Get-Module;
+  if ($ModsReg | Where-Object {$_.Name -eq "Lync"}) {
+    if (!($ModsLoad | Where-Object {$_.Name -eq "Lync"})) {
+      Import-Module Lync -ErrorAction Stop ;return $TRUE;
+    } else {
+      return $TRUE;
+    }
+  } else {
+    Write-Error {"$((get-date).ToString('HH:mm:ss')):($env:computername) does not have Lync Admin Tools installed!";};
+    return $FALSE
+  }
+}
+
+#*------^ load-LMS.ps1 ^------
+
+#*------v Load-LMSPlug.ps1 v------
+function Load-LMSPlug {
+    <#
+    .SYNOPSIS
+    Checks local machine for registred Lync2013 LMS, and loads the component
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://toddomation.com
+    Twitter:	http://twitter.com/tostka
+
+    REVISIONS   :
+    vers: 10:41 AM 9/12/2018 ported load-LMSSnap -> Load-LMS
+    vers: 9:39 AM 8/12/2015: retool into generic switched version to support both modules & snappins with same basic code
+    vers: 9:25 AM 8/12/2015 building a stock LMS version (vs the fancier Load-LMSPlugLatest)
+    vers: 10:43 AM 1/14/2015 fixed return & syntax expl to true/false
+    vers: 10:20 AM 12/10/2014 moved commentblock into function
+    vers: 11:40 AM 11/25/2014 adapted to Lync
+    ers: 2:05 PM 7/19/2013 typo fix in 2013 code
+    vers: 1:46 PM 7/19/2013
+    .INPUTS
+    None.
+    .OUTPUTS
+    Outputs $true if successful. $false if failed.
+    .EXAMPLE
+    $LMSLoaded = Load-LMSPlug ; Write-Debug "`$LMSLoaded: $LMSLoaded" ;
+    Stock free-standing Exchange Mgmt Shell load
+    .EXAMPLE
+    $LMSLoaded = Load-LMSPlug ; Write-Debug "`$LMSLoaded: $LMSLoaded" ; get-exchangeserver | out-null ;
+    Example utilizing a workaround for bug in LMS, where loading ADMS causes Powershell/ISE to crash if ADMS is loaded after LMS, before LMS has executed any commands
+    .EXAMPLE
+    TRY {
+        if(($host.version.major -lt 3) -AND (get-service rtc* -ea SilentlyContinue)){
+            write-verbose -verbose:$bshowVerbose  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Using Local Server Lync13 Snapin" ;
+            $sName="Lync"; if (!(Get-Module| where{$_.Name -eq "Lync")) {Import-Module $sName -ea Stop} ;
+        } else {
+             write-verbose -verbose:$bshowVerbose  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Initiating RLMS connection" ;
+            $reqMods="connect-L13;Disconnect-L13;".split(";") ;
+            $reqMods | % {if( !(test-path function:$_ ) ) {write-error "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Missing $($_) function. EXITING." } } ;
+            Reconnect-L13 ;
+        } ;
+    }
+    CATCH {
+        $PassStatus="ERROR" ;
+        $msg=": Error Details: $($_)" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): FAILURE!" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): Error in $($_.InvocationInfo.ScriptName)." ;
+        Write-Error "$(get-date -format "HH:mm:ss"): -- Error information" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): Line Number: $($_.InvocationInfo.ScriptLineNumber)" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): Offset: $($_.InvocationInfo.OffsetInLine)" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): Command: $($_.InvocationInfo.MyCommand)" ;
+        Write-Error "$(get-date -format "HH:mm:ss"): Line: $($_.InvocationInfo.Line)" ;
+        #Write-Error "$(get-date -format "HH:mm:ss"): Error Details: $($_)" ;
+        $msg=": Error Details: $($_)" ;
+        Write-Error  "$(get-date -format "HH:mm:ss"): $($msg)" ;
+        set-AdServerSettings -ViewEntireForest $false ;
+        Exit ;
+    } ;
+    Example demo'ing check for local psv2 & ADtopo svc to defer
+    #>
+
+    # check registred v loaded ;
+    # style of plugin we want to test/load
+    $PlugStyle="Module"
+    #"Snapin"; # for Exch EMS
+    #"Module" ; # for Lync/ADMS
+    #$PlugName="Microsoft.Exchange.Management.PowerShell.E2010" ;
+    $PlugName="Lync" ;
+
+    switch ($PlugStyle) {
+        "Module" {
+            # module-style (for LMS or ADMS
+            $PlugsReg=Get-Module -ListAvailable;
+            $PlugsLoad=Get-Module;
+        }
+        "Snapin"{
+            $PlugsReg=Get-PSSnapin -Registered ;
+            $PlugsLoad=Get-PSSnapin ;
+        }
+    } # switch-E
+
+    TRY {
+        if ($PlugsReg | Where-Object {$_.Name -eq $PlugName}) {
+          if (!($PlugsLoad | Where-Object {$_.Name -eq $PlugName})) {
+              #
+              switch ($PlugStyle) {
+                  "Module" {
+                      #Import-Module $PlugName -ErrorAction Stop ;return $TRUE;
+                      Import-Module $PlugName -ErrorAction Stop ;write-output $TRUE;
+                  }
+                  "Snapin"{
+                      #Add-PSSnapin $PlugName -ErrorAction Stop ; return $TRUE
+                      Add-PSSnapin $PlugName -ErrorAction Stop ; write-output $TRUE
+                  }
+              } # switch-E
+
+          } else {
+              # already loaded
+              #return $TRUE;
+              write-output $TRUE;
+          } # if-E
+        } else {
+          Write-Error {"$(Get-TimeStamp):($env:computername) does not have $PlugName installed!";};
+          #return $FALSE ;
+          write-output $FALSE ;
+        } # if-E ;
+    } CATCH {
+        Write-Error "$(Get-TimeStamp): FAILED TO LOAD $PLUGNAME" ;
+        Write-Error "$(Get-TimeStamp): Error in $($_.InvocationInfo.ScriptName)." ;
+        Write-Error "$(Get-TimeStamp): -- Error information" ;
+        Write-Error "$(Get-TimeStamp): Line Number: $($_.InvocationInfo.ScriptLineNumber)" ;
+        Write-Error "$(Get-TimeStamp): Offset: $($_.InvocationInfo.OffsetInLine)" ;
+        Write-Error "$(Get-TimeStamp): Command: $($_.InvocationInfo.MyCommand)" ;
+        Write-Error "$(Get-TimeStamp): Line: $($_.InvocationInfo.Line)" ;
+        #Write-Error ("$(Get-TimeStamp): Error Details: $($_)") ;
+        $msg=": Error Details: $($_)" ;
+        Write-Error  "$(Get-TimeStamp): " + $msg; ;
+    };   # try/catch-E
+
+} #*------^END Function Load-LMSPlug ^------
+if(!(test-path function:load-LMS -ea 0 )){set-alias -name 'load-LMS' -value 'Load-LMSPlug'}
+
+#*------^ Load-LMSPlug.ps1 ^------
+
+#*------v Reconnect-L13.ps1 v------
+Function Reconnect-L13 {
+    <#
+    .SYNOPSIS
+    Reconnect-L13 - Reconnect Remote Exch2010 Mgmt Shell connection
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://toddomation.com
+    Twitter:	http://twitter.com/tostka
+    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
+    Website:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    REVISIONS   :
+    * 10:14 AM 11/20/2019 rl13: added cred support
+    * 8:09 AM 11/1/2017 updated example to pretest for reqMods
+    * 1:26 PM 12/9/2016 split no-session and reopen code, to suppress notfound errors
+    * 12:54 PM 12/9/2016 cleaned up, add pshelp
+    * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
+    * 2:37 PM 12/6/2016 ported to local LMSRemote
+    * 2/10/14 posted version
+    .DESCRIPTION
+    Reconnect-L13 - Reconnect Remote Exch2010 Mgmt Shell connection
+    .PARAMETER  Credential
+    Credential object
+    .INPUTS
+    None. Does not accepted piped input.
+    .OUTPUTS
+    None. Returns no objects or output.
+    .EXAMPLE
+    $reqMods="connect-L13;Disconnect-L13;".split(";") ;
+    $reqMods | % {if( !(test-path function:$_ ) ) {write-error "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Missing $($_) function. EXITING." } } ;
+    Reconnect-L13 ;
+    .LINK
+    #>
+
+    Param(
+        [Parameter(HelpMessage='Credential object')][System.Management.Automation.PSCredential]$Credential
+    )  ;
+
+    # 10:55 AM 12/9/2016 issue here is that disconnect-L13 leaves $L13Sess populated, but State closed and Availability None, wich doesn't trigger the above disc/reconn
+    # what we want is to validate the sess is State 'Opened' & Availability 'Available'
+    #if($L13Sess.state -ne 'Opened' -OR $L13Sess.Availability -ne 'Available' -OR !$L13Sess) { Disconnect-L13 ;Start-Sleep -s 3;Connect-L13 ;} ;
+    # 1:26 PM 12/9/2016: spread it out, getting not-found errors, don't run removals unless it's not there
+    if(!$L13Sess){
+        if(!$Credential){
+            Disconnect-L13 ;Start-Sleep -S 3;
+            Connect-L13
+        } else {
+            Disconnect-L13 -Credential:$($Credential) ; Disconnect-PssBroken ;Start-Sleep -Seconds 3;
+            Connect-L13 -Credential:$($Credential) ;
+        } ;
+    }
+    elseif($L13Sess.state -ne 'Opened' -OR $L13Sess.Availability -ne 'Available' ) {
+        Disconnect-L13 ;Start-Sleep -S 3;Connect-L13 ;
+        if(!$Credential){
+            Disconnect-L13 ;Start-Sleep -S 3;
+            Connect-L13
+        } else {
+            Disconnect-L13 -Credential:$($Credential) ; Disconnect-PssBroken ;Start-Sleep -Seconds 3;
+            Connect-L13 -Credential:$($Credential) ;
+        } ;
+    } ;
+}#*------^ END Function Reconnect-L13 ^------ ;
+# 12:14 PM 5/6/2019
+if(!(get-alias rl13 -ea 0)){ set-alias -name rl13 -value Reconnect-L13 }
+
+#*------^ Reconnect-L13.ps1 ^------
+
+#*======^ END FUNCTIONS ^======
+
+Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnect-PssBroken,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
+
+
+# SIG # Begin signature block
+# MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUz1Tj1oSIJwXWcbRszBmb6Lye
+# xSWgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
+# Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
+# ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
+# a+NnFYNRPPa8Bnm071ohGe27jNWKPVUbDfd0OY2sqCBQCEFVb5pqcIECRRnlhN5H
+# +EEJmm2x9AU0uS7IHxHeUo8fkW4vm49adkat5gAoOZOwbuNntBOAJy9LCyNs4F1I
+# KKphP3TyDwe8XqsEVwB2m9FPAgMBAAGjdjB0MBMGA1UdJQQMMAoGCCsGAQUFBwMD
+# MF0GA1UdAQRWMFSAEL95r+Rh65kgqZl+tgchMuKhLjAsMSowKAYDVQQDEyFQb3dl
+# clNoZWxsIExvY2FsIENlcnRpZmljYXRlIFJvb3SCEGwiXbeZNci7Rxiz/r43gVsw
+# CQYFKw4DAh0FAAOBgQB6ECSnXHUs7/bCr6Z556K6IDJNWsccjcV89fHA/zKMX0w0
+# 6NefCtxas/QHUA9mS87HRHLzKjFqweA3BnQ5lr5mPDlho8U90Nvtpj58G9I5SPUg
+# CspNr5jEHOL5EdJFBIv3zI2jQ8TPbFGC0Cz72+4oYzSxWpftNX41MmEsZkMaADGC
+# AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
+# Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
+# AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTP8kz8
+# bu1P//OHn4h1nJGkT/t0rjANBgkqhkiG9w0BAQEFAASBgFDpMNIqiMuX3qBSdvLL
+# hCKlNkOc4g4AbBGbiyaZa8Ovf8WRrxuxRUBJdKSNtQeXBs5y4MhFKYzDiaWsvEZX
+# XMxWS3zkO83/SVNhq97pg0hING3OEO+vrX43yWgQxvvgy6a3rKgLVriAaM+Iv7Gx
+# KIRRb/rbCBaC6siTX14wod5a
+# SIG # End signature block
