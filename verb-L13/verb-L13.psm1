@@ -5,7 +5,7 @@
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.0.0.0.0.0.0
+  Version     : 1.0.0.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -94,18 +94,31 @@ Function Connect-L13 {
     Connect-L13 - Setup Remote Exch2010 Mgmt Shell connection
     .NOTES
     Author: Todd Kadrie
-    Website:	http://toddomation.com
-    Twitter:	http://twitter.com/tostka
+    Website:	http://www.toddomation.com
+    Twitter:	@tostka / http://twitter.com/tostka
+    AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
+    AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    Version     : 1.0.0.0
+    CreatedDate : 2020-03-17
+    FileName    : Connect-L13
+    License     : MIT License
+    Copyright   : (c) 2020 Todd Kadrie
+    Github      : https://github.com/tostka/verb-L13
+    Tags        : Powershell,Lync,Lync2013,Skype
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
-    * # 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
+    * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
+    * 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
     * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
     * 2:37 PM 12/6/2016 ported to local LMSRemote
     * 2/10/14 posted version
-    $Credential can leverage a global: $Credential = $global:SIDcred
     .DESCRIPTION
     Connect-L13 - Setup Remote Exch2010 Mgmt Shell connection
+    .PARAMETER Pool
+    Lync server/Pool to Remote to [-Pool ucpool.DOMAIN.COM]
+    .PARAMETER CommandPrefix
+    "[verb]-PREFIX[command] PREFIX string for clearly marking cmdlets sourced in this connection [-CommandPrefix tag]
     .PARAMETER  Credential
     Credential object
     .INPUTS
@@ -133,25 +146,62 @@ Function Connect-L13 {
     } ;
     .LINK
     #>
-
+    [CmdletBinding()]
     Param(
-        [Parameter(HelpMessage='Credential object')][System.Management.Automation.PSCredential]$Credential
+        [Parameter(HelpMessage = "Lync server/Pool to Remote to [-Pool ucpool.DOMAIN.COM]")][string]$Pool,
+        [Parameter(HelpMessage = "[verb]-PREFIX[command] PREFIX string for clearly marking cmdlets sourced in this connection [-CommandPrefix tag]")][string]$CommandPrefix,
+        [Parameter(HelpMessage = "Credential to use for this connection [-credential [credential obj variable]")][System.Management.Automation.PSCredential]$Credential = $credTORSID,
+        [Parameter(HelpMessage = "Debugging Flag [-showDebug]")]
+        [switch] $showDebug
     )  ;
-
+    $verbose = ($VerbosePreference -eq "Continue") ; 
+    
+    $LyncAdminPool = $Pool ; 
     # set the below to OP to prefix mounted commands like: get-OLMailbox == local get-Mailbox command
     # set to $null/blank to not perform prefixing
     $CommandPrefix = $null ;
-    # "OP"
-    # provide a fault-tolerant pool connection for LMS
-    switch ($env:USERDOMAIN){
-        "$($TORMeta['legacyDomain'])" {$LyncAdminPool=$TORMeta['LyncAdminPool'] }
-        "$($TOLMeta['legacyDomain'])" {$LyncAdminPool=$TOLMeta['LyncAdminPool'] }
-    } ;
-    if(test-connection $LyncAdminPool -count 1 -quiet){
-      $LyncFE = $LyncAdminPool ;
+
+    $sTitleBarTag = "LMS" ;
+    # use credential domain to determine target org
+    $rgxLegacyLogon = '\w*\\\w*' ; 
+    if($Credential.username -match $rgxLegacyLogon){
+        $credDom =$Credential.username.split('\')[0] ; 
+        switch ($credDom){
+            "$($TORMeta['legacyDomain'])" {
+                $LyncAdminPool = $TORMeta['LyncAdminPool'] ; 
+            }
+            "$($TOLMeta['legacyDomain'])" {
+                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
+            }
+            "$CMWMeta['legacyDomain'])" {
+                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
+            }
+            default {
+                $LyncAdminPool = 'dynamic' ; 
+            } ;
+        } ; 
+    } elseif ($Credential.username.contains('@')){
+        $credDom = ($Credential.username.split("@"))[1] ;
+        switch ($credDom){
+            "$($TORMeta['o365_OPDomain'])" {
+                $LyncAdminPool = $TORMeta['LyncAdminPool'] ;  ; 
+            }
+            "$($TOLMeta['o365_OPDomain'])" {
+                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
+            }
+            "$CMWMeta['o365_OPDomain'])" {
+                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
+            }
+            default {
+                $LyncAdminPool = 'dynamic' ; 
+            } ;
+        } ; 
     } else {
-      $LyncFE = (Get-LyncServerInSite) ;
-    } ;
+        write-warning "$((get-date).ToString('HH:mm:ss')):UNRECOGNIZED CREDENTIAL!:$($Credential.Username)`nUNABLE TO RESOLVE DEFAULT LYNCADMINPOOL FOR CONNECTION!" ;
+    }  ;  
+    if($LyncAdminPool -eq 'dynamic'){
+        $LyncAdminPool = Get-LyncServerInSite ; 
+    } ; 
     $LyncConnectionURI  = "https://$($LyncFE)/OcsPowershell"  ;
     If (Test-Connection $LyncFE -count 1) {
         write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncFE))..." ;
@@ -178,7 +228,7 @@ Function Connect-L13 {
                 $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
             } ;
             # add titlebar tag
-            Add-PSTitleBar 'LMS' ;
+            Add-PSTitleBar $sTitleBarTag ;
             $Global:L13IsDehydrated=$true ;
             write-verbose -verbose:$true "$(($Global:L13Sess | select ComputerName,Availability,State,ConfigurationName | format-table -auto |out-string).trim())" ;
             # drop returning an object; we're using a global variable now
@@ -189,7 +239,6 @@ Function Connect-L13 {
         throw "Unable to ping:$($LyncFE)! ABORTING!" ;
     } ;
 } ; #*------^ END Function Connect-L13 ^------
-# 12:14 PM 5/6/2019
 if(!(get-alias cl13 -ea 0)){ set-alias -name cl13 -value Connect-L13 }
 
 #*------^ Connect-L13.ps1 ^------
@@ -636,8 +685,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnec
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUz1Tj1oSIJwXWcbRszBmb6Lye
-# xSWgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUDg1XvjXOcf+1lLvjlVXgyPuR
+# UUagggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -652,9 +701,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnec
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTP8kz8
-# bu1P//OHn4h1nJGkT/t0rjANBgkqhkiG9w0BAQEFAASBgFDpMNIqiMuX3qBSdvLL
-# hCKlNkOc4g4AbBGbiyaZa8Ovf8WRrxuxRUBJdKSNtQeXBs5y4MhFKYzDiaWsvEZX
-# XMxWS3zkO83/SVNhq97pg0hING3OEO+vrX43yWgQxvvgy6a3rKgLVriAaM+Iv7Gx
-# KIRRb/rbCBaC6siTX14wod5a
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRhEksr
+# UUU1G6ITbLnGU/7L3ncBwDANBgkqhkiG9w0BAQEFAASBgId1aDmNmu+L0KteCfZG
+# gNnELc9XeRVSjO3SCFuJ3H1QBg9F0RfwUy/LTUTJADtbqBnINjd9R1Lh0MPFpDp2
+# tyQkr2JiiQLieXO1zoFw+t7M1tRbL4bORnne/4P8z0HDZq/nfyNVl+SmcPPne4z/
+# AKgHBfzaLX71KBqMm6cxjgDM
 # SIG # End signature block
