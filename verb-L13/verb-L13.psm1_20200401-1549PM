@@ -1,4 +1,4 @@
-# verb-L13.psm1
+﻿# verb-L13.psm1
 
 
   <#
@@ -98,7 +98,7 @@ Function Connect-L13 {
     Twitter:	@tostka / http://twitter.com/tostka
     AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
     AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
-    Version     : 1.0.0
+    Version     : 1.0.1.0
     CreatedDate : 2020-03-17
     FileName    : Connect-L13
     License     : MIT License
@@ -681,3 +681,29 @@ if(!(get-alias rl13 -ea 0)){ set-alias -name rl13 -value Reconnect-L13 }
 
 Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnect-PssBroken,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
 
+
+# SIG # Begin signature block
+# MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0bdywSnqGVHFk0/+Ref/ojEz
+# TjmgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
+# Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
+# ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
+# a+NnFYNRPPa8Bnm071ohGe27jNWKPVUbDfd0OY2sqCBQCEFVb5pqcIECRRnlhN5H
+# +EEJmm2x9AU0uS7IHxHeUo8fkW4vm49adkat5gAoOZOwbuNntBOAJy9LCyNs4F1I
+# KKphP3TyDwe8XqsEVwB2m9FPAgMBAAGjdjB0MBMGA1UdJQQMMAoGCCsGAQUFBwMD
+# MF0GA1UdAQRWMFSAEL95r+Rh65kgqZl+tgchMuKhLjAsMSowKAYDVQQDEyFQb3dl
+# clNoZWxsIExvY2FsIENlcnRpZmljYXRlIFJvb3SCEGwiXbeZNci7Rxiz/r43gVsw
+# CQYFKw4DAh0FAAOBgQB6ECSnXHUs7/bCr6Z556K6IDJNWsccjcV89fHA/zKMX0w0
+# 6NefCtxas/QHUA9mS87HRHLzKjFqweA3BnQ5lr5mPDlho8U90Nvtpj58G9I5SPUg
+# CspNr5jEHOL5EdJFBIv3zI2jQ8TPbFGC0Cz72+4oYzSxWpftNX41MmEsZkMaADGC
+# AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
+# Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
+# AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRNhaIq
+# Yeo8KPWMhaYAUBMebzdhOTANBgkqhkiG9w0BAQEFAASBgFsHd5dOusiKjGG2TWdM
+# w0B7f9CBNli0hLEokSNXvXQjJJxqk0OQrJ9HtbkgcCiKJc3pfirGiJ031Zi1F50a
+# o1qQtl88uQBKQ+RaJ+ROGNKYAk97XjNxjGIABJfeWX1SssEJfTxSIdSEcyBYzoK0
+# qstCS3aHu5V2ip4CawQJi4wR
+# SIG # End signature block

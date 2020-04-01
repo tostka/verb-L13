@@ -5,7 +5,7 @@
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.1.0.0.0.0.0.0.0
+  Version     : 1.0.2.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -98,7 +98,7 @@ Function Connect-L13 {
     Twitter:	@tostka / http://twitter.com/tostka
     AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
     AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
-    Version     : 1.0.1.0
+    Version     : 1.0.0
     CreatedDate : 2020-03-17
     FileName    : Connect-L13
     License     : MIT License
@@ -685,8 +685,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnec
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0bdywSnqGVHFk0/+Ref/ojEz
-# TjmgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNwL/MD4K03d3LaUnh2L03LNc
+# 9eagggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -701,9 +701,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnec
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRNhaIq
-# Yeo8KPWMhaYAUBMebzdhOTANBgkqhkiG9w0BAQEFAASBgFsHd5dOusiKjGG2TWdM
-# w0B7f9CBNli0hLEokSNXvXQjJJxqk0OQrJ9HtbkgcCiKJc3pfirGiJ031Zi1F50a
-# o1qQtl88uQBKQ+RaJ+ROGNKYAk97XjNxjGIABJfeWX1SssEJfTxSIdSEcyBYzoK0
-# qstCS3aHu5V2ip4CawQJi4wR
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQWDksf
+# lgXHSjLB96nwHvi7s5PklzANBgkqhkiG9w0BAQEFAASBgHNlTupsOKTnlyGD1B9k
+# Af+rdyFX8tlA8F6axPSbhtGgX5tGGQ4ed42JBhRRu4Cby7Z3qwEN2YjDCh1RTxNM
+# EL3iSAi35bH6pKwgLUyGqcx90kf3Yb4hP/+1iVZ830ZCbogticozYSXUkC+prtO7
+# Ljp9G1SelpAUWc08IDZJsLwv
 # SIG # End signature block
