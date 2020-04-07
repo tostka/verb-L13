@@ -5,7 +5,7 @@
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.2.0.0.0.0.0.0.0
+  Version     : 1.0.3.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -286,33 +286,6 @@ if(!(get-alias Disconnect-LMSR -ea 0)){ set-alias -name Disconnect-LMSR -value D
 if(!(get-alias dl13 -ea 0)){ set-alias -name dl13 -value Disconnect-L13 }
 
 #*------^ Disconnect-L13.ps1 ^------
-
-#*------v Disconnect-PssBroken.ps1 v------
-Function Disconnect-PssBroken {
-    <#
-    .SYNOPSIS
-    Disconnect-PssBroken - Remove all local broken PSSessions
-    .NOTES
-    Author: Todd Kadrie
-    Website:	http://tinstoys.blogspot.com
-    Twitter:	http://twitter.com/tostka
-    REVISIONS   :
-    * 12:56 PM 11/7/2f018 fix typo $s.state.value, switched tests to the strings, over values (not sure worked at all)
-    * 1:50 PM 12/8/2016 initial version
-    .DESCRIPTION
-    Disconnect-PssBroken - Remove all local broken PSSessions
-    .INPUTS
-    None. Does not accepted piped input.
-    .OUTPUTS
-    None. Returns no objects or output.
-    .EXAMPLE
-    Disconnect-PssBroken ;
-    .LINK
-    #>
-    Get-PsSession |Where-Object{$_.State -ne 'Opened' -or $_.Availability -ne 'Available'} | Remove-PSSession -Verbose ;
-}
-
-#*------^ Disconnect-PssBroken.ps1 ^------
 
 #*------v enable-Lync.ps1 v------
 function enable-Lync {
@@ -679,14 +652,14 @@ if(!(get-alias rl13 -ea 0)){ set-alias -name rl13 -value Reconnect-L13 }
 
 #*======^ END FUNCTIONS ^======
 
-Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnect-PssBroken,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
+Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
 
 
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNwL/MD4K03d3LaUnh2L03LNc
-# 9eagggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU69/zQyen961IJWS6G0H1vE7Y
+# vkGgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -701,9 +674,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,Disconnec
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQWDksf
-# lgXHSjLB96nwHvi7s5PklzANBgkqhkiG9w0BAQEFAASBgHNlTupsOKTnlyGD1B9k
-# Af+rdyFX8tlA8F6axPSbhtGgX5tGGQ4ed42JBhRRu4Cby7Z3qwEN2YjDCh1RTxNM
-# EL3iSAi35bH6pKwgLUyGqcx90kf3Yb4hP/+1iVZ830ZCbogticozYSXUkC+prtO7
-# Ljp9G1SelpAUWc08IDZJsLwv
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQr2nAw
+# YwXMYjJOAaRkBZFxTuwbwDANBgkqhkiG9w0BAQEFAASBgFTFb1gVXesHZZuplZ8c
+# EhtZziu+cGvKU14TsQ1DO86mNRSl2u6zi4bD7TTCuB0Up9qHsBMIPIqWCN3WJARB
+# 3SOh+TTwKmOB9QLgKstIa3EBF+Z0weetaY4Fi56vFE6rdL7O4eEOyepVUxFtaAaG
+# b9rfTU5Yjrht06wNC1N/uEUC
 # SIG # End signature block
