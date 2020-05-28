@@ -19,6 +19,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
     * 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
     * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
@@ -58,6 +59,7 @@ Function Connect-L13 {
     .LINK
     #>
     [CmdletBinding()]
+    [Alias('cl13')]
     Param(
         [Parameter(HelpMessage = "Lync server/Pool to Remote to [-Pool ucpool.DOMAIN.COM]")][string]$Pool,
         [Parameter(HelpMessage = "[verb]-PREFIX[command] PREFIX string for clearly marking cmdlets sourced in this connection [-CommandPrefix tag]")][string]$CommandPrefix,
@@ -149,6 +151,6 @@ Function Connect-L13 {
     } else {
         throw "Unable to ping:$($LyncFE)! ABORTING!" ;
     } ;
-} ; #*------^ END Function Connect-L13 ^------
-if(!(get-alias cl13 -ea 0)){ set-alias -name cl13 -value Connect-L13 } ; 
-#*------^ Connect-L13.ps1 ^------
+} ; 
+#*------^ END Function Connect-L13 ^------
+

@@ -1,11 +1,11 @@
-﻿# VERB-L13.psm1
+﻿# verb-L13.psm1
 
 
   <#
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.4.0.0.0.0.0.0.0
+  Version     : 1.0.3.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -108,7 +108,6 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
-    * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
     * 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
     * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
@@ -148,7 +147,6 @@ Function Connect-L13 {
     .LINK
     #>
     [CmdletBinding()]
-    [Alias('cl13')]
     Param(
         [Parameter(HelpMessage = "Lync server/Pool to Remote to [-Pool ucpool.DOMAIN.COM]")][string]$Pool,
         [Parameter(HelpMessage = "[verb]-PREFIX[command] PREFIX string for clearly marking cmdlets sourced in this connection [-CommandPrefix tag]")][string]$CommandPrefix,
@@ -240,7 +238,8 @@ Function Connect-L13 {
     } else {
         throw "Unable to ping:$($LyncFE)! ABORTING!" ;
     } ;
-}
+} ; #*------^ END Function Connect-L13 ^------
+if(!(get-alias cl13 -ea 0)){ set-alias -name cl13 -value Connect-L13 }
 
 #*------^ Connect-L13.ps1 ^------
 
@@ -252,18 +251,10 @@ Function Disconnect-L13 {
     .NOTES
     Author: Todd Kadrie
     Website:	http://toddomation.com
-    Twitter     :	@tostka / http://twitter.com/tostka
-    AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
-    AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
-    Version     : 1.1.0
-    CreatedDate : 2020-02-24
-    FileName    : Connect-Ex2010()
-    License     : MIT License
-    Copyright   : (c) 2020 Todd Kadrie
-    Github      : https://github.com/tostka
-    Tags        : Powershell
+    Twitter:	http://twitter.com/tostka
+    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
+    Website:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
     REVISIONS   :
-    * 12:20 PM 5/27/2020 updated cbh ;  moved aliases: Disconnect-LMSR','dl13 win func
     * 8:01 AM 11/1/2017 added Remove-PSTitlebar 'LMS', and Disconnect-PssBroken to the bottom - to halt growth of unrepaired broken connections. Updated example to pretest for reqMods
     * 12:54 PM 12/9/2016 cleaned up, add pshelp
     * 12:09 PM 12/9/2016 implented and debugged as part of verb-L13 set
@@ -281,16 +272,18 @@ Function Disconnect-L13 {
     Disconnect-L13 ;
     .LINK
     #>
-    [CmdletBinding()]
-    [Alias('Disconnect-LMSR','dl13')]
-    Param () ;
     $Global:L13Mod | Remove-Module -Force ;
     $Global:L13Sess | Remove-PSSession ;
+    # 7:56 AM 11/1/2017 remove titlebar tag
     Remove-PSTitlebar 'LMS' ;
     # kill any other sessions using my distinctive name; add verbose, to ensure they're echo'd that they were missed
     Get-PSSession |Where-Object {$_.name -eq 'Lync2013'} | Remove-PSSession -verbose ;
     Disconnect-PssBroken ;
-}
+} ; #*------^ END Function Disconnect-L13 ^------
+# 11:55 AM 5/6/2019 alias to purge script from tsksid-incl-ServerApp.ps1
+if(!(get-alias Disconnect-LMSR -ea 0)){ set-alias -name Disconnect-LMSR -value Disconnect-L13 } ;
+# 12:14 PM 5/6/2019
+if(!(get-alias dl13 -ea 0)){ set-alias -name dl13 -value Disconnect-L13 }
 
 #*------^ Disconnect-L13.ps1 ^------
 
@@ -596,20 +589,12 @@ Function Reconnect-L13 {
     .SYNOPSIS
     Reconnect-L13 - Reconnect Remote Exch2010 Mgmt Shell connection
     .NOTES
-Author: Todd Kadrie
+    Author: Todd Kadrie
     Website:	http://toddomation.com
-    Twitter     :	@tostka / http://twitter.com/tostka
-    AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
-    AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
-    Version     : 1.1.0
-    CreatedDate : 2020-02-24
-    FileName    : Connect-Ex2010()
-    License     : MIT License
-    Copyright   : (c) 2020 Todd Kadrie
-    Github      : https://github.com/tostka
-    Tags        : Powershell,Lync,Lync2013
+    Twitter:	http://twitter.com/tostka
+    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
+    Website:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
     REVISIONS   :
-    * 12:20 PM 5/27/2020 moved aliases: rl13 win func
     * 10:14 AM 11/20/2019 rl13: added cred support
     * 8:09 AM 11/1/2017 updated example to pretest for reqMods
     * 1:26 PM 12/9/2016 split no-session and reopen code, to suppress notfound errors
@@ -659,7 +644,9 @@ Author: Todd Kadrie
             Connect-L13 -Credential:$($Credential) ;
         } ;
     } ;
-}
+}#*------^ END Function Reconnect-L13 ^------ ;
+# 12:14 PM 5/6/2019
+if(!(get-alias rl13 -ea 0)){ set-alias -name rl13 -value Reconnect-L13 }
 
 #*------^ Reconnect-L13.ps1 ^------
 
@@ -671,8 +658,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUr7ntPqKxEwA7tc0QoFhWc98l
-# PcCgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU69/zQyen961IJWS6G0H1vE7Y
+# vkGgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -687,9 +674,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRYWKdb
-# XGddALeedn1fXTjjTzNRqTANBgkqhkiG9w0BAQEFAASBgDKpU72zj95jpcgj90al
-# IuF2/wTLm/yw0J6TJmZDudiZ5Dodbgj3gwuHmdHrSUAhiBSfX84ZpicdCL9kAMWR
-# bLj5mNL1DNLgO7hA209miYrL5w20T1BsTCGPI6fRrtT1uYGSPXL/schZR87bln2h
-# 4Dm+a4joexXzoBHtYohCzPPB
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQr2nAw
+# YwXMYjJOAaRkBZFxTuwbwDANBgkqhkiG9w0BAQEFAASBgFTFb1gVXesHZZuplZ8c
+# EhtZziu+cGvKU14TsQ1DO86mNRSl2u6zi4bD7TTCuB0Up9qHsBMIPIqWCN3WJARB
+# 3SOh+TTwKmOB9QLgKstIa3EBF+Z0weetaY4Fi56vFE6rdL7O4eEOyepVUxFtaAaG
+# b9rfTU5Yjrht06wNC1N/uEUC
 # SIG # End signature block

@@ -4,12 +4,20 @@ Function Reconnect-L13 {
     .SYNOPSIS
     Reconnect-L13 - Reconnect Remote Exch2010 Mgmt Shell connection
     .NOTES
-    Author: Todd Kadrie
+Author: Todd Kadrie
     Website:	http://toddomation.com
-    Twitter:	http://twitter.com/tostka
-    Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
-    Website:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    Twitter     :	@tostka / http://twitter.com/tostka
+    AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
+    AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    Version     : 1.1.0
+    CreatedDate : 2020-02-24
+    FileName    : Connect-Ex2010()
+    License     : MIT License
+    Copyright   : (c) 2020 Todd Kadrie
+    Github      : https://github.com/tostka
+    Tags        : Powershell,Lync,Lync2013
     REVISIONS   :
+    * 12:20 PM 5/27/2020 moved aliases: rl13 win func
     * 10:14 AM 11/20/2019 rl13: added cred support
     * 8:09 AM 11/1/2017 updated example to pretest for reqMods
     * 1:26 PM 12/9/2016 split no-session and reopen code, to suppress notfound errors
@@ -59,6 +67,6 @@ Function Reconnect-L13 {
             Connect-L13 -Credential:$($Credential) ;
         } ;
     } ;
-}#*------^ END Function Reconnect-L13 ^------ ;
-# 12:14 PM 5/6/2019
-if(!(get-alias rl13 -ea 0)){ set-alias -name rl13 -value Reconnect-L13 } ;
+} ;
+#*------^ END Function Reconnect-L13 ^------ ;
+
