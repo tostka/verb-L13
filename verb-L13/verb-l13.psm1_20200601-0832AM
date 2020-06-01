@@ -1,11 +1,11 @@
-﻿# verb-l13.psm1
+﻿# VERB-L13.psm1
 
 
   <#
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.6.0.0.0.0.0.0.0
+  Version     : 1.0.4.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -108,7 +108,6 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
-    * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
     * 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
@@ -205,14 +204,15 @@ Function Connect-L13 {
     if($LyncAdminPool -eq 'dynamic'){
         $LyncAdminPool = Get-LyncServerInSite ; 
     } ; 
-    $LyncConnectionURI  = "https://$($LyncAdminPool)/OcsPowershell"  ;
-    If (Test-Connection $LyncAdminPool -count 1) {
-        write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncAdminPool))..." ;
+    $LyncConnectionURI  = "https://$($LyncFE)/OcsPowershell"  ;
+    If (Test-Connection $LyncFE -count 1) {
+        write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncFE))..." ;
         # splat to open a session - # stock 'PSLanguageMode=Restricted' powershell IIS Webpool
-        $pltSOpts=@{SkipCACheck=$true ;SkipCNCheck=$true ;SkipRevocationCheck=$true ;} ; 
-        write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):New-PSSessionOption w`n$(($pltSOpts|out-string).trim())" ; 
-        $sesOpts = New-PSSessionOption @pltSOpts ;
+
+        $sesOpts = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck ;
         $LMSsplat=@{ConnectionURI=$LyncConnectionURI; name='Lync2013';SessionOption=$sesOpts};
+
+        # 12/8/2016 add  credential support
         if($Credential){
             $LMSsplat.Add("Credential",$Credential) ;
         } elseif($global:SIDcred) {
@@ -221,30 +221,14 @@ Function Connect-L13 {
             Get-AdminCred ;
         } ;  ;
         # -Authentication Basic only if specif needed: for Ex configured to connect via IP vs hostname)
-        write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):New-PSSession w`n$(($LMSSplat|out-string).trim())" ;
         if($Global:L13Sess = New-PSSession @LMSSplat){
             write-verbose -verbose:$true  "$((get-date).ToString('HH:mm:ss')):Importing Lync 2013 Module" ;
-            $pltISess=@{Session = $Global:L13Sess ;DisableNameChecking=$true ;Prefix=$CommandPrefix ;AllowClobber=$true ;} ; 
-            $pltIMod=@{Global=$true; PassThru=$true; DisableNameChecking=$true;} ; 
             if($CommandPrefix){
-                #$pltIMod.Add('Prefix',$CommandPrefix)
                 write-verbose -verbose:$true  "$((get-date).ToString("HH:mm:ss")):Note: Prefixing this Modules Cmdlets as [verb]-$($CommandPrefix)[noun]" ;
-                # tried using -PSSession for the import-PSSession spec - doesn't work (was unparam'd before)
-                #$Global:L13Mod = Import-Module -Name (Import-PSSession @pltISess) -Global -Prefix $CommandPrefix -PassThru -DisableNameChecking   ;
-                $Global:ImportedPSS = Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber ; 
-                $Global:L13Mod = Import-Module $Global:ImportedPSS -Global -PassThru -DisableNameChecking -Prefix $CommandPrefix ;
+                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -Prefix $CommandPrefix -AllowClobber) -Global -Prefix $CommandPrefix -PassThru -DisableNameChecking   ;
             } else {
-                #$Global:L13Mod = Import-Module -Name (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
-                <# Import-Module : The specified module 'tmp_3yci04ik.be1' was not loaded because no valid module file was found in any module directory.
-                #>
-                # could be latency issue, split them out 2-step
-                $Global:ImportedPSS = Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber ; 
-                $Global:L13Mod = Import-Module $Global:ImportedPSS -Global -PassThru -DisableNameChecking ;
+                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
             } ;
-            #write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):Import-PSSession w`n$(($pltISess|out-string).trim())" ;
-            #write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):Import-Module w`n$(($pltIMod|out-string).trim())" ;
-            # 7:34 AM 6/1/2020 for some reason the splats w below keep triggering Cannot validate argument on parameter 'Prefix', even when it's not in either splat!, revert to the hybrid commandline above
-            #$Global:L13Mod = Import-Module @pltIMod -PSSession (Import-PSSession @pltISess) ;
             # add titlebar tag
             Add-PSTitleBar $sTitleBarTag ;
             $Global:L13IsDehydrated=$true ;
@@ -254,7 +238,7 @@ Function Connect-L13 {
             write-host -foregroundcolor red "$((get-date).ToString('HH:mm:ss')):Unable to open PSSession w`n$(($LMSSplat|out-string).trim())" ;
         } ;
     } else {
-        throw "Unable to ping:$($LyncAdminPool)! ABORTING!" ;
+        throw "Unable to ping:$($LyncFE)! ABORTING!" ;
     } ;
 }
 
@@ -279,7 +263,6 @@ Function Disconnect-L13 {
     Github      : https://github.com/tostka
     Tags        : Powershell
     REVISIONS   :
-    * 8:29 AM 6/1/2020 added if/then on the globals (suppress error when missing), added -or'd removal on generic name and computername, added verbose to outputs, to echo details when run verbose
     * 12:20 PM 5/27/2020 updated cbh ;  moved aliases: Disconnect-LMSR','dl13 win func
     * 8:01 AM 11/1/2017 added Remove-PSTitlebar 'LMS', and Disconnect-PssBroken to the bottom - to halt growth of unrepaired broken connections. Updated example to pretest for reqMods
     * 12:54 PM 12/9/2016 cleaned up, add pshelp
@@ -301,13 +284,11 @@ Function Disconnect-L13 {
     [CmdletBinding()]
     [Alias('Disconnect-LMSR','dl13')]
     Param () ;
-    $verbose = ($VerbosePreference -eq "Continue") ; 
-    # remove sessions & modules tagged with the global varis
-    if($Global:L13Mod){$Global:L13Mod | Remove-Module -Force -verbose:$verbose ; } ; 
-    if($Global:L13Sess){$Global:L13Sess | Remove-PSSession -verbose:$verbose  ;} ; 
-    # kill any other sessions with distinctive name or computername ; add verbose, to ensure they're echo'd that they were missed
-    Get-PSSession |Where-Object {$_.name -eq 'Lync2013' -OR $_.ComputerName -eq $TORMeta['LyncAdminPool']} | Remove-PSSession -verbose:$verbose ;
+    $Global:L13Mod | Remove-Module -Force ;
+    $Global:L13Sess | Remove-PSSession ;
     Remove-PSTitlebar 'LMS' ;
+    # kill any other sessions using my distinctive name; add verbose, to ensure they're echo'd that they were missed
+    Get-PSSession |Where-Object {$_.name -eq 'Lync2013'} | Remove-PSSession -verbose ;
     Disconnect-PssBroken ;
 }
 
@@ -416,7 +397,7 @@ Function Get-LyncServerInSite {
     $tmpGroup= $objs | Select-Object Path -First 1 ;
     $Group= [ADSI]$tmpGroup.Path ;
     $GrpMembers= $Group.Member ;
-    <# 1:52 PM 8/24/2015 at this point, the hosting dom is in the member DN's:
+    <# 1:52 PM 8/24/2015 at this poin, the hosting dom is in the member DN's:
    $grpmembers
       CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
       CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
@@ -690,8 +671,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7DNbWnSSJbDLpIcupWXiUMQ0
-# ewqgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUr7ntPqKxEwA7tc0QoFhWc98l
+# PcCgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -706,9 +687,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBREIHwp
-# HhO7Kcqj53QyBxt5TXgHIDANBgkqhkiG9w0BAQEFAASBgDVbAWkZrf8RNCZpw0Pa
-# e1N/pzyWBsc4BLWr+g7rPZ4O96iYXhb148GV7yoJkAjwqcIPZMyiD8fZnXtPDbgu
-# iR+OnfVXC5LsfXIZyuxlIL8Pezot5j3HTpgqkUeVLr7SUu3hawjQ/3jEspOGW+ia
-# AJCnL+T0WeElCTVVieK963Jk
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRYWKdb
+# XGddALeedn1fXTjjTzNRqTANBgkqhkiG9w0BAQEFAASBgDKpU72zj95jpcgj90al
+# IuF2/wTLm/yw0J6TJmZDudiZ5Dodbgj3gwuHmdHrSUAhiBSfX84ZpicdCL9kAMWR
+# bLj5mNL1DNLgO7hA209miYrL5w20T1BsTCGPI6fRrtT1uYGSPXL/schZR87bln2h
+# 4Dm+a4joexXzoBHtYohCzPPB
 # SIG # End signature block

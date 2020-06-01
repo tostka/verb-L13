@@ -1,4 +1,4 @@
-#*------v Function Disconnect-L13 v------
+#*------v Disconnect-L13.ps1 v------
 Function Disconnect-L13 {
     <#
     .SYNOPSIS
@@ -17,6 +17,7 @@ Function Disconnect-L13 {
     Github      : https://github.com/tostka
     Tags        : Powershell
     REVISIONS   :
+    * 8:29 AM 6/1/2020 added if/then on the globals (suppress error when missing), added -or'd removal on generic name and computername, added verbose to outputs, to echo details when run verbose
     * 12:20 PM 5/27/2020 updated cbh ;  moved aliases: Disconnect-LMSR','dl13 win func
     * 8:01 AM 11/1/2017 added Remove-PSTitlebar 'LMS', and Disconnect-PssBroken to the bottom - to halt growth of unrepaired broken connections. Updated example to pretest for reqMods
     * 12:54 PM 12/9/2016 cleaned up, add pshelp
@@ -38,10 +39,14 @@ Function Disconnect-L13 {
     [CmdletBinding()]
     [Alias('Disconnect-LMSR','dl13')]
     Param () ;
-    $Global:L13Mod | Remove-Module -Force ;
-    $Global:L13Sess | Remove-PSSession ;
+    $verbose = ($VerbosePreference -eq "Continue") ; 
+    # remove sessions & modules tagged with the global varis
+    if($Global:L13Mod){$Global:L13Mod | Remove-Module -Force -verbose:$verbose ; } ; 
+    if($Global:L13Sess){$Global:L13Sess | Remove-PSSession -verbose:$verbose  ;} ; 
+    # kill any other sessions with distinctive name or computername ; add verbose, to ensure they're echo'd that they were missed
+    Get-PSSession |Where-Object {$_.name -eq 'Lync2013' -OR $_.ComputerName -eq $TORMeta['LyncAdminPool']} | Remove-PSSession -verbose:$verbose ;
     Remove-PSTitlebar 'LMS' ;
-    # kill any other sessions using my distinctive name; add verbose, to ensure they're echo'd that they were missed
-    Get-PSSession |Where-Object {$_.name -eq 'Lync2013'} | Remove-PSSession -verbose ;
     Disconnect-PssBroken ;
-} ; #*------^ END Function Disconnect-L13 ^------
+}
+
+#*------^ Disconnect-L13.ps1 ^------

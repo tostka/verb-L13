@@ -19,6 +19,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
     * 7:54 AM 11/1/2017 add titlebar tag & updated example to test for pres of Add-PSTitleBar
@@ -115,15 +116,14 @@ Function Connect-L13 {
     if($LyncAdminPool -eq 'dynamic'){
         $LyncAdminPool = Get-LyncServerInSite ; 
     } ; 
-    $LyncConnectionURI  = "https://$($LyncFE)/OcsPowershell"  ;
-    If (Test-Connection $LyncFE -count 1) {
-        write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncFE))..." ;
+    $LyncConnectionURI  = "https://$($LyncAdminPool)/OcsPowershell"  ;
+    If (Test-Connection $LyncAdminPool -count 1) {
+        write-verbose -verbose:$true  "$((get-date).ToString("yyyyMMdd HH:mm:ss")):Adding LMS (connecting to $($LyncAdminPool))..." ;
         # splat to open a session - # stock 'PSLanguageMode=Restricted' powershell IIS Webpool
-
-        $sesOpts = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck ;
+        $pltSOpts=@{SkipCACheck=$true ;SkipCNCheck=$true ;SkipRevocationCheck=$true ;} ; 
+        write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):New-PSSessionOption w`n$(($pltSOpts|out-string).trim())" ; 
+        $sesOpts = New-PSSessionOption @pltSOpts ;
         $LMSsplat=@{ConnectionURI=$LyncConnectionURI; name='Lync2013';SessionOption=$sesOpts};
-
-        # 12/8/2016 add  credential support
         if($Credential){
             $LMSsplat.Add("Credential",$Credential) ;
         } elseif($global:SIDcred) {
@@ -132,14 +132,30 @@ Function Connect-L13 {
             Get-AdminCred ;
         } ;  ;
         # -Authentication Basic only if specif needed: for Ex configured to connect via IP vs hostname)
+        write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):New-PSSession w`n$(($LMSSplat|out-string).trim())" ;
         if($Global:L13Sess = New-PSSession @LMSSplat){
             write-verbose -verbose:$true  "$((get-date).ToString('HH:mm:ss')):Importing Lync 2013 Module" ;
+            $pltISess=@{Session = $Global:L13Sess ;DisableNameChecking=$true ;Prefix=$CommandPrefix ;AllowClobber=$true ;} ; 
+            $pltIMod=@{Global=$true; PassThru=$true; DisableNameChecking=$true;} ; 
             if($CommandPrefix){
+                #$pltIMod.Add('Prefix',$CommandPrefix)
                 write-verbose -verbose:$true  "$((get-date).ToString("HH:mm:ss")):Note: Prefixing this Modules Cmdlets as [verb]-$($CommandPrefix)[noun]" ;
-                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -Prefix $CommandPrefix -AllowClobber) -Global -Prefix $CommandPrefix -PassThru -DisableNameChecking   ;
+                # tried using -PSSession for the import-PSSession spec - doesn't work (was unparam'd before)
+                #$Global:L13Mod = Import-Module -Name (Import-PSSession @pltISess) -Global -Prefix $CommandPrefix -PassThru -DisableNameChecking   ;
+                $Global:ImportedPSS = Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber ; 
+                $Global:L13Mod = Import-Module $Global:ImportedPSS -Global -PassThru -DisableNameChecking -Prefix $CommandPrefix ;
             } else {
-                $Global:L13Mod = Import-Module (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
+                #$Global:L13Mod = Import-Module -Name (Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber) -Global -PassThru -DisableNameChecking   ;
+                <# Import-Module : The specified module 'tmp_3yci04ik.be1' was not loaded because no valid module file was found in any module directory.
+                #>
+                # could be latency issue, split them out 2-step
+                $Global:ImportedPSS = Import-PSSession $Global:L13Sess -DisableNameChecking -AllowClobber ; 
+                $Global:L13Mod = Import-Module $Global:ImportedPSS -Global -PassThru -DisableNameChecking ;
             } ;
+            #write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):Import-PSSession w`n$(($pltISess|out-string).trim())" ;
+            #write-verbose -verbose:$verbose "$((get-date).ToString('HH:mm:ss')):Import-Module w`n$(($pltIMod|out-string).trim())" ;
+            # 7:34 AM 6/1/2020 for some reason the splats w below keep triggering Cannot validate argument on parameter 'Prefix', even when it's not in either splat!, revert to the hybrid commandline above
+            #$Global:L13Mod = Import-Module @pltIMod -PSSession (Import-PSSession @pltISess) ;
             # add titlebar tag
             Add-PSTitleBar $sTitleBarTag ;
             $Global:L13IsDehydrated=$true ;
@@ -149,8 +165,8 @@ Function Connect-L13 {
             write-host -foregroundcolor red "$((get-date).ToString('HH:mm:ss')):Unable to open PSSession w`n$(($LMSSplat|out-string).trim())" ;
         } ;
     } else {
-        throw "Unable to ping:$($LyncFE)! ABORTING!" ;
+        throw "Unable to ping:$($LyncAdminPool)! ABORTING!" ;
     } ;
-} ; 
-#*------^ END Function Connect-L13 ^------
+}
 
+#*------^ Connect-L13.ps1 ^------

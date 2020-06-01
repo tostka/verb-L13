@@ -41,7 +41,7 @@
     $tmpGroup= $objs | Select-Object Path -First 1 ;
     $Group= [ADSI]$tmpGroup.Path ;
     $GrpMembers= $Group.Member ;
-    <# 1:52 PM 8/24/2015 at this poin, the hosting dom is in the member DN's:
+    <# 1:52 PM 8/24/2015 at this point, the hosting dom is in the member DN's:
    $grpmembers
       CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
       CN=FENAME,OU=Lync 2013,OU=Prod,OU=Servers,OU=OUNAME,DC=SUBDOM,DC=SUB,DC=DOMAIN,DC=com
