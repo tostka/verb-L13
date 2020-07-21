@@ -19,6 +19,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 5:15 PM 7/21/2020 add ven supp
     * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
@@ -90,6 +91,9 @@ Function Connect-L13 {
             "$CMWMeta['legacyDomain'])" {
                 $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
             }
+            "$VENMeta['legacyDomain'])" {
+                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
+            }
             default {
                 $LyncAdminPool = 'dynamic' ; 
             } ;
@@ -105,6 +109,9 @@ Function Connect-L13 {
             }
             "$CMWMeta['o365_OPDomain'])" {
                 $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
+            }
+            "$VENMeta['o365_OPDomain'])" {
+                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
             }
             default {
                 $LyncAdminPool = 'dynamic' ; 

@@ -1,11 +1,11 @@
-﻿# verb-L13.psm1
+﻿# verb-l13.psm1
 
 
   <#
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.7.0.0.0.0.0.0.0
+  Version     : 1.0.6.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -108,7 +108,6 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
-    * 5:15 PM 7/21/2020 add ven supp
     * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
     * 8:20 AM 3/17/2020 Connect-L13: reworked for Meta infra obj use, defaulting cred
@@ -180,9 +179,6 @@ Function Connect-L13 {
             "$CMWMeta['legacyDomain'])" {
                 $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
             }
-            "$VENMeta['legacyDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
-            }
             default {
                 $LyncAdminPool = 'dynamic' ; 
             } ;
@@ -198,9 +194,6 @@ Function Connect-L13 {
             }
             "$CMWMeta['o365_OPDomain'])" {
                 $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
-            }
-            "$VENMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
             }
             default {
                 $LyncAdminPool = 'dynamic' ; 
@@ -697,8 +690,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUoDkJpaAOvBqrgu/9f8W1C+9/
-# 2migggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7DNbWnSSJbDLpIcupWXiUMQ0
+# ewqgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -713,9 +706,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQmPpot
-# T1Fmn4enkAOx31hbgnfY9zANBgkqhkiG9w0BAQEFAASBgKSWmN4aXAK6VZWdFDlH
-# 5Tb42l03rgSL/FMc9OqrAoLcB/lcqZIFtA4c62jBsvfmrz0el7hhjEV7qV2rbk8R
-# 0RMGSABwirkeGSl5TjM8opcNFgZXIdfEOyV2X8H8nxxEaot4y9iKrI++t5Y0pG6B
-# Wl9KfahcwWWxXOrKnxnK6e+7
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBREIHwp
+# HhO7Kcqj53QyBxt5TXgHIDANBgkqhkiG9w0BAQEFAASBgDVbAWkZrf8RNCZpw0Pa
+# e1N/pzyWBsc4BLWr+g7rPZ4O96iYXhb148GV7yoJkAjwqcIPZMyiD8fZnXtPDbgu
+# iR+OnfVXC5LsfXIZyuxlIL8Pezot5j3HTpgqkUeVLr7SUu3hawjQ/3jEspOGW+ia
+# AJCnL+T0WeElCTVVieK963Jk
 # SIG # End signature block
