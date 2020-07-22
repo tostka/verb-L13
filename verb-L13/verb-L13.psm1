@@ -1,11 +1,11 @@
-﻿# verb-L13.psm1
+﻿# verb-l13.psm1
 
 
   <#
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.7.0.0.0.0.0.0.0
+  Version     : 1.0.8.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -108,6 +108,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 7:13 AM 7/22/2020 replaced codeblock w get-TenantTag()
     * 5:15 PM 7/21/2020 add ven supp
     * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
@@ -166,49 +167,29 @@ Function Connect-L13 {
     $CommandPrefix = $null ;
 
     $sTitleBarTag = "LMS" ;
+    
     # use credential domain to determine target org
     $rgxLegacyLogon = '\w*\\\w*' ; 
     if($Credential.username -match $rgxLegacyLogon){
         $credDom =$Credential.username.split('\')[0] ; 
-        switch ($credDom){
-            "$($TORMeta['legacyDomain'])" {
-                $LyncAdminPool = $TORMeta['LyncAdminPool'] ; 
-            }
-            "$($TOLMeta['legacyDomain'])" {
-                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
-            }
-            "$CMWMeta['legacyDomain'])" {
-                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
-            }
-            "$VENMeta['legacyDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
-            }
-            default {
-                $LyncAdminPool = 'dynamic' ; 
-            } ;
-        } ; 
     } elseif ($Credential.username.contains('@')){
         $credDom = ($Credential.username.split("@"))[1] ;
-        switch ($credDom){
-            "$($TORMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $TORMeta['LyncAdminPool'] ;  ; 
-            }
-            "$($TOLMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
-            }
-            "$CMWMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
-            }
-            "$VENMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
-            }
-            default {
-                $LyncAdminPool = 'dynamic' ; 
-            } ;
-        } ; 
     } else {
-        write-warning "$((get-date).ToString('HH:mm:ss')):UNRECOGNIZED CREDENTIAL!:$($Credential.Username)`nUNABLE TO RESOLVE DEFAULT LYNCADMINPOOL FOR CONNECTION!" ;
-    }  ;  
+        write-warning "$((get-date).ToString('HH:mm:ss')):UNRECOGNIZED CREDENTIAL!:$($Credential.Username)`nUNABLE TO RESOLVE DEFAULT L13SERVER FOR CONNECTION!" ;
+    } ;
+    $LyncAdminPool=$null ; 
+    $Metas=(get-variable *meta|?{$_.name -match '^\w{3}Meta$'}) ; 
+    foreach ($Meta in $Metas){
+            if( ($credDom -eq $Meta.value.legacyDomain) -OR ($credDom -eq $Meta.value.o365_TenantDomain) -OR ($credDom -eq $Meta.value.o365_OPDomain)){
+                $LyncAdminPool = $Meta.value.LyncAdminPool ; 
+                break ; 
+            } ; 
+    } ;
+    # force unresolved to dyn 
+    if(!$LyncAdminPool){
+        $LyncAdminPool = 'dynamic' ; 
+    } ;
+
     if($LyncAdminPool -eq 'dynamic'){
         $LyncAdminPool = Get-LyncServerInSite ; 
     } ; 
@@ -697,8 +678,8 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUoDkJpaAOvBqrgu/9f8W1C+9/
-# 2migggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUkJqUO+G/Z5Dpw+TWANR9FBAs
+# slqgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -713,9 +694,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQmPpot
-# T1Fmn4enkAOx31hbgnfY9zANBgkqhkiG9w0BAQEFAASBgKSWmN4aXAK6VZWdFDlH
-# 5Tb42l03rgSL/FMc9OqrAoLcB/lcqZIFtA4c62jBsvfmrz0el7hhjEV7qV2rbk8R
-# 0RMGSABwirkeGSl5TjM8opcNFgZXIdfEOyV2X8H8nxxEaot4y9iKrI++t5Y0pG6B
-# Wl9KfahcwWWxXOrKnxnK6e+7
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ+Ok68
+# 0b+k7rXMs/33j0Y9Xoq8TzANBgkqhkiG9w0BAQEFAASBgGFkERErmXKLqWZfw4I7
+# rAblRbtSRnbDa9sFzAaKmbJ6OWyayJGNcu4yVfthuDuY3CnCEX7OWCKZDlwt+/aP
+# 8Dmyho/tdJrfHmKeJHuVXrw9Dhbf948QeHQV5WbpzrzX9ZINM40oftOstVfP90gB
+# gL1LL1HHeoOMrKv6OmO5DZAo
 # SIG # End signature block

@@ -19,6 +19,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 7:13 AM 7/22/2020 replaced codeblock w get-TenantTag()
     * 5:15 PM 7/21/2020 add ven supp
     * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
     * 12:20 PM 5/27/2020 moved aliases: cl13 win func
@@ -77,49 +78,29 @@ Function Connect-L13 {
     $CommandPrefix = $null ;
 
     $sTitleBarTag = "LMS" ;
+    
     # use credential domain to determine target org
     $rgxLegacyLogon = '\w*\\\w*' ; 
     if($Credential.username -match $rgxLegacyLogon){
         $credDom =$Credential.username.split('\')[0] ; 
-        switch ($credDom){
-            "$($TORMeta['legacyDomain'])" {
-                $LyncAdminPool = $TORMeta['LyncAdminPool'] ; 
-            }
-            "$($TOLMeta['legacyDomain'])" {
-                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
-            }
-            "$CMWMeta['legacyDomain'])" {
-                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
-            }
-            "$VENMeta['legacyDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
-            }
-            default {
-                $LyncAdminPool = 'dynamic' ; 
-            } ;
-        } ; 
     } elseif ($Credential.username.contains('@')){
         $credDom = ($Credential.username.split("@"))[1] ;
-        switch ($credDom){
-            "$($TORMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $TORMeta['LyncAdminPool'] ;  ; 
-            }
-            "$($TOLMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $TOLMeta['LyncAdminPool'] ; 
-            }
-            "$CMWMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $CMWMeta['LyncAdminPool'] ; 
-            }
-            "$VENMeta['o365_OPDomain'])" {
-                $LyncAdminPool = $VENMeta['LyncAdminPool'] ; 
-            }
-            default {
-                $LyncAdminPool = 'dynamic' ; 
-            } ;
-        } ; 
     } else {
-        write-warning "$((get-date).ToString('HH:mm:ss')):UNRECOGNIZED CREDENTIAL!:$($Credential.Username)`nUNABLE TO RESOLVE DEFAULT LYNCADMINPOOL FOR CONNECTION!" ;
-    }  ;  
+        write-warning "$((get-date).ToString('HH:mm:ss')):UNRECOGNIZED CREDENTIAL!:$($Credential.Username)`nUNABLE TO RESOLVE DEFAULT L13SERVER FOR CONNECTION!" ;
+    } ;
+    $LyncAdminPool=$null ; 
+    $Metas=(get-variable *meta|?{$_.name -match '^\w{3}Meta$'}) ; 
+    foreach ($Meta in $Metas){
+            if( ($credDom -eq $Meta.value.legacyDomain) -OR ($credDom -eq $Meta.value.o365_TenantDomain) -OR ($credDom -eq $Meta.value.o365_OPDomain)){
+                $LyncAdminPool = $Meta.value.LyncAdminPool ; 
+                break ; 
+            } ; 
+    } ;
+    # force unresolved to dyn 
+    if(!$LyncAdminPool){
+        $LyncAdminPool = 'dynamic' ; 
+    } ;
+
     if($LyncAdminPool -eq 'dynamic'){
         $LyncAdminPool = Get-LyncServerInSite ; 
     } ; 
