@@ -1,11 +1,11 @@
-# verb-l13.psm1
+﻿# verb-l13.psm1
 
 
   <#
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.10.0.0.0.0.0.0.0
+  Version     : 1.0.9.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -126,7 +126,7 @@ Function check-L13DrainStop {
     [CmdletBinding()]
     Param(
         [Parameter(Position=0,HelpMessage="Dawdle wait interval (defaults 15secs)[-wait 15]")]
-        $Wait=15
+        $Wait=15,
     )  ;
     
     $verbose = ($VerbosePreference -eq "Continue") ; 
@@ -135,7 +135,7 @@ Function check-L13DrainStop {
         write-host -foregroundcolor green "$((get-date).ToString('HH:mm:ss')):Still Draining" ; 
         if($1F){Sleep -s $Wait} ;  $1F=$true ; 
         $drainsvc = Get-CsWindowsService|?{$_.ServiceStatus -eq 'Draining'} ; 
-        write-host -foregroundcolor green "$((get-date).ToString('HH:mm:ss')):Draining Services `n$(($drainsvc | fl Name,ActivityLevel,ServiceStatus |out-string).trim())" ; 
+        write-host -foregroundcolor green "$((get-date).ToString('HH:mm:ss')):Draining Services `n$(($drainsvc | fl Name,ActivityLevel,ServiceStatus ; |out-string).trim())" ; 
     } Until (($drainsvc|measure).count -eq 0) ;
     write-host "`a" ;
     write-host "`a" ;
@@ -733,3 +733,29 @@ Author: Todd Kadrie
 
 Export-ModuleMember -Function Add-LMSRemote,check-L13DrainStop,Connect-L13,Disconnect-L13,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
 
+
+# SIG # Begin signature block
+# MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhJxEzO8vqzJSQPoObqBU5e7O
+# KECgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
+# Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
+# ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
+# a+NnFYNRPPa8Bnm071ohGe27jNWKPVUbDfd0OY2sqCBQCEFVb5pqcIECRRnlhN5H
+# +EEJmm2x9AU0uS7IHxHeUo8fkW4vm49adkat5gAoOZOwbuNntBOAJy9LCyNs4F1I
+# KKphP3TyDwe8XqsEVwB2m9FPAgMBAAGjdjB0MBMGA1UdJQQMMAoGCCsGAQUFBwMD
+# MF0GA1UdAQRWMFSAEL95r+Rh65kgqZl+tgchMuKhLjAsMSowKAYDVQQDEyFQb3dl
+# clNoZWxsIExvY2FsIENlcnRpZmljYXRlIFJvb3SCEGwiXbeZNci7Rxiz/r43gVsw
+# CQYFKw4DAh0FAAOBgQB6ECSnXHUs7/bCr6Z556K6IDJNWsccjcV89fHA/zKMX0w0
+# 6NefCtxas/QHUA9mS87HRHLzKjFqweA3BnQ5lr5mPDlho8U90Nvtpj58G9I5SPUg
+# CspNr5jEHOL5EdJFBIv3zI2jQ8TPbFGC0Cz72+4oYzSxWpftNX41MmEsZkMaADGC
+# AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
+# Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
+# AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTwTGlf
+# x7Oe67il1VxEkXaBGxEy5TANBgkqhkiG9w0BAQEFAASBgKH4CaYG5fuaZc6VpkQb
+# 4k3i1Q821JRMSD9iDF5q/R7CiWniI2wOMncwKMScPSMr0DUqu+AJSR/6W1pz+NiG
+# RImw3lGiFMwm1OrocY08iETa+RfP3OWGFbmOpFtskuvYeDqOULH32TRzbJuf+a0Y
+# gIsKgdQnxA0K2vpt12p3BGrc
+# SIG # End signature block

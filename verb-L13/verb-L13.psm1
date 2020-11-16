@@ -5,7 +5,7 @@
   .SYNOPSIS
   verb-L13 - Powershell Lync 2013 generic functions module
   .NOTES
-  Version     : 1.0.8.0.0.0.0.0.0.0
+  Version     : 1.0.11.0.0.0.0.0.0.0
   Author      : Todd Kadrie
   Website     :	https://www.toddomation.com
   Twitter     :	@tostka
@@ -86,6 +86,65 @@ Function Add-LMSRemote {
 }
 
 #*------^ Add-LMSRemote.ps1 ^------
+
+#*------v check-L13DrainStop.ps1 v------
+Function check-L13DrainStop {
+    <#
+    .SYNOPSIS
+    check-L13DrainStop - Dawdleloop to monitor CSWindowsServices for Draining ServiceStatus
+    .NOTES
+    Author: Todd Kadrie
+    Website:	http://www.toddomation.com
+    Twitter:	@tostka / http://twitter.com/tostka
+    AddedCredit : Inspired by concept code by ExactMike Perficient, Global Knowl... (Partner)
+    AddedWebsite:	https://social.technet.microsoft.com/Forums/msonline/en-US/f3292898-9b8c-482a-86f0-3caccc0bd3e5/exchange-powershell-monitoring-remote-sessions?forum=onlineservicesexchange
+    Version     : 1.0.0
+    CreatedDate : 2020-11-03
+    FileName    : check-L13DrainStop
+    License     : MIT License
+    Copyright   : (c) 2020 Todd Kadrie
+    Github      : https://github.com/tostka/verb-L13
+    Tags        : Powershell,Lync,Lync2013,Skype
+    Website:    : toddomation.com
+    REVISIONS   :
+    * 11:31 AM 11/3/2020 init version
+    .DESCRIPTION
+    check-L13DrainStop - Dawdleloop to monitor CSWindowsServices for Draining ServiceStatus
+    .INPUTS
+    None. Does not accepted piped input.
+    .OUTPUTS
+    None. Returns no objects or output.
+    .EXAMPLE
+    # initiate a graceful stop-cswindowsservice
+    Stop-CsWindowsService -Graceful -whatif ; 
+    # monitor the draining with this script:
+    check-L13DrainStop -wait 30 ; 
+    Drainstops local server, and runs the monitoring script with a 30second wait between passes
+    .LINK
+    https://github.com/tostka/verb-L13
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Position=0,HelpMessage="Dawdle wait interval (defaults 15secs)[-wait 15]")]
+        $Wait=15
+    )  ;
+    
+    $verbose = ($VerbosePreference -eq "Continue") ; 
+    $1F=$false ;
+    Do {
+        write-host -foregroundcolor green "$((get-date).ToString('HH:mm:ss')):Still Draining" ; 
+        if($1F){Sleep -s $Wait} ;  $1F=$true ; 
+        $drainsvc = Get-CsWindowsService|?{$_.ServiceStatus -eq 'Draining'} ; 
+        write-host -foregroundcolor green "$((get-date).ToString('HH:mm:ss')):Draining Services `n$(($drainsvc | fl Name,ActivityLevel,ServiceStatus |out-string).trim())" ; 
+    } Until (($drainsvc|measure).count -eq 0) ;
+    write-host "`a" ;
+    write-host "`a" ;
+    write-host "`a" ;
+    write-host -foregroundcolor YELLOW "$((get-date).ToString('HH:mm:ss')):DONE!" ; 
+    Get-CsWindowsService ; 
+}
+
+#*------^ check-L13DrainStop.ps1 ^------
 
 #*------v Connect-L13.ps1 v------
 Function Connect-L13 {
@@ -672,14 +731,14 @@ Author: Todd Kadrie
 
 #*======^ END FUNCTIONS ^======
 
-Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
+Export-ModuleMember -Function Add-LMSRemote,check-L13DrainStop,Connect-L13,Disconnect-L13,enable-Lync,Get-LyncServerInSite,load-LMS,Load-LMSPlug,Reconnect-L13 -Alias *
 
 
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUkJqUO+G/Z5Dpw+TWANR9FBAs
-# slqgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjqBj0RMW9XPIGxdHqn6bVnDA
+# WEWgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -694,9 +753,9 @@ Export-ModuleMember -Function Add-LMSRemote,Connect-L13,Disconnect-L13,enable-Ly
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ+Ok68
-# 0b+k7rXMs/33j0Y9Xoq8TzANBgkqhkiG9w0BAQEFAASBgGFkERErmXKLqWZfw4I7
-# rAblRbtSRnbDa9sFzAaKmbJ6OWyayJGNcu4yVfthuDuY3CnCEX7OWCKZDlwt+/aP
-# 8Dmyho/tdJrfHmKeJHuVXrw9Dhbf948QeHQV5WbpzrzX9ZINM40oftOstVfP90gB
-# gL1LL1HHeoOMrKv6OmO5DZAo
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRlv/BC
+# 1IA9n6sHOIqwwvFn2DxFlzANBgkqhkiG9w0BAQEFAASBgI5BsxFJ5A4eCGJ7QRVD
+# 30M6iqOTf7qUs99IWjMmNlJLgLSQEz/pId1mmVq/50os1kvGUVwxbI8ZiPBm+emz
+# +4sE42e0zDcCx7VJgQQlQyCJBTUzrwjzJe+oIuDSP+PCXDAHp9rKWdi5vfN5zunU
+# XkimM01gzLnqPXkylp8aa7Ts
 # SIG # End signature block

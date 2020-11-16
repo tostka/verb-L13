@@ -12,7 +12,7 @@
 RootModule = 'verb-L13.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.8'
+ModuleVersion = '1.0.11'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@ Description = 'Powershell Lync 2013 generic functions module'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Add-LMSRemote','Connect-L13','Disconnect-L13','enable-Lync','Get-LyncServerInSite','load-LMS','Load-LMSPlug','Reconnect-L13')
+FunctionsToExport = @('Add-LMSRemote','check-L13DrainStop','Connect-L13','Disconnect-L13','enable-Lync','Get-LyncServerInSite','load-LMS','Load-LMSPlug','Reconnect-L13')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -126,8 +126,8 @@ PrivateData = @{
 # SIG # Begin signature block
 # MIIELgYJKoZIhvcNAQcCoIIEHzCCBBsCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+VwLCeUxZSSTjYAvj4VSklJG
-# xtmgggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUfZ9pK84kkz8dL7wZKnItUIBU
+# gb2gggI4MIICNDCCAaGgAwIBAgIQWsnStFUuSIVNR8uhNSlE6TAJBgUrDgMCHQUA
 # MCwxKjAoBgNVBAMTIVBvd2VyU2hlbGwgTG9jYWwgQ2VydGlmaWNhdGUgUm9vdDAe
 # Fw0xNDEyMjkxNzA3MzNaFw0zOTEyMzEyMzU5NTlaMBUxEzARBgNVBAMTClRvZGRT
 # ZWxmSUkwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALqRVt7uNweTkZZ+16QG
@@ -142,9 +142,9 @@ PrivateData = @{
 # AWAwggFcAgEBMEAwLDEqMCgGA1UEAxMhUG93ZXJTaGVsbCBMb2NhbCBDZXJ0aWZp
 # Y2F0ZSBSb290AhBaydK0VS5IhU1Hy6E1KUTpMAkGBSsOAwIaBQCgeDAYBgorBgEE
 # AYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwG
-# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTo/qxf
-# ucxk4JqmjNTdrPck6MQhSzANBgkqhkiG9w0BAQEFAASBgEPJvMgxcU3VPbibMYqF
-# oIz7sxA5l6/oSQKgqybaNUqE6ZbqgrF3RBaVGSdk4dU5RMwvA0YWbTautqItFCpY
-# DvLvQexBSMaIYyzYB8IHGND2+Vcoi/ZCu6G3rvQFDZqV89r0Iwft6IxCyK1ykcja
-# ri7noQreotQW8NeM1GJ49f1x
+# CisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQVe91c
+# 3PWvu7S6FSSvl6AXFfVEYDANBgkqhkiG9w0BAQEFAASBgLpvpvujMqWghTAfxKmW
+# clFo1VRCT9mRCoowry/0Fm9FkgkxrkvL4Qzl0cdDOxWwYYzNHWjgCevzzuHA4HSH
+# LIGuiHjCyOW+lCwAuv4MSv50p3/dxT3eDS7fr6aUwodsh218o3FeKVJ9kdf1PTjb
+# VRAedb7EDT5htYqubPjU7MuY
 # SIG # End signature block
