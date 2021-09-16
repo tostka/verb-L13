@@ -9,6 +9,7 @@ function enable-Lync {
   Twitter:	https://twitter.com/tostka
 
   REVISIONS   :
+  * 11:42 AM 9/16/2021 string
   * 7:38 AM 4/30/2015 not sure of the origin date, but by 7:38 AM 4/30/2015 it's not the current enable-luser.ps1 version
   .PARAMETER  uid
   User SamAccountName or UPN
@@ -17,7 +18,7 @@ function enable-Lync {
   .OUTPUTS
   None. Returns no objects or output.
   .EXAMPLE
-  enable-Lync -uid kadrits -whatif
+  enable-Lync -uid LOGON -whatif
   .LINK
   #>
   PARAM(
