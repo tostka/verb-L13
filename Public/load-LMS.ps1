@@ -1,4 +1,4 @@
-#*-----v Function load-LMS v-----
+﻿#*-----v Function load-LMS v-----
 function load-LMS {
   <#
   .SYNOPSIS

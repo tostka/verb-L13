@@ -1,4 +1,4 @@
-#*------v Function Add-LMSRemote v------
+﻿#*------v Function Add-LMSRemote v------
 Function Add-LMSRemote {
     <#
     .SYNOPSIS

@@ -1,4 +1,4 @@
-#*------v Disconnect-L13.ps1 v------
+﻿#*------v Disconnect-L13.ps1 v------
 Function Disconnect-L13 {
     <#
     .SYNOPSIS

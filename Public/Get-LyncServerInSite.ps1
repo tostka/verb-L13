@@ -1,4 +1,4 @@
-  #*------v Function Get-LyncServerInSite v------
+﻿  #*------v Function Get-LyncServerInSite v------
   Function Get-LyncServerInSite {
   <#
   .SYNOPSIS

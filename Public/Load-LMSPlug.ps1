@@ -1,4 +1,4 @@
-#*------v Function Load-LMSPlug v------
+﻿#*------v Function Load-LMSPlug v------
 function Load-LMSPlug {
     <#
     .SYNOPSIS

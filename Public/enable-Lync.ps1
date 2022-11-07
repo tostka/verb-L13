@@ -1,4 +1,4 @@
-#*------v Function enable-Lync v------
+﻿#*------v Function enable-Lync v------
 function enable-Lync {
   <#
   .SYNOPSIS
