@@ -19,6 +19,7 @@ Function Connect-L13 {
     Based on idea by: ExactMike Perficient, Global Knowl... (Partner)
     Website:
     REVISIONS   :
+    * 1:30 PM 9/5/2024 added  update-SecurityProtocolTDO() SB to begin
     * 7:13 AM 7/22/2020 replaced codeblock w get-TenantTag()
     * 5:15 PM 7/21/2020 add ven supp
     * 8:28 AM 6/1/2020 fixed fundemental break on jumpboxes, shifted constants to infra file values, split out failing import-module import-pssession combo, into 2-step (latency issue when 1-linered)
@@ -70,7 +71,23 @@ Function Connect-L13 {
         [Parameter(HelpMessage = "Debugging Flag [-showDebug]")]
         [switch] $showDebug
     )  ;
-    $verbose = ($VerbosePreference -eq "Continue") ; 
+	$Verbose = ($VerbosePreference -eq 'Continue')
+	$CurrentVersionTlsLabel = [Net.ServicePointManager]::SecurityProtocol ; # Tls, Tls11, Tls12 ('Tls' == TLS1.0)  ;
+	write-verbose "PRE: `$CurrentVersionTlsLabel : $($CurrentVersionTlsLabel )" ;
+	# psv6+ already covers, test via the SslProtocol parameter presense
+	if ('SslProtocol' -notin (Get-Command Invoke-RestMethod).Parameters.Keys) {
+		$currentMaxTlsValue = [Math]::Max([Net.ServicePointManager]::SecurityProtocol.value__,[Net.SecurityProtocolType]::Tls.value__) ;
+		write-verbose "`$currentMaxTlsValue : $($currentMaxTlsValue )" ;
+		$newerTlsTypeEnums = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentMaxTlsValue }
+		if($newerTlsTypeEnums){
+			write-verbose "Appending upgraded/missing TLS `$enums:`n$(($newerTlsTypeEnums -join ','|out-string).trim())" ;
+		} else {
+			write-verbose "Current TLS `$enums are up to date with max rev available on this machine" ;
+		};
+		$newerTlsTypeEnums | ForEach-Object {
+			[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
+		} ;
+	} ;
     
     $LyncAdminPool = $Pool ; 
     # set the below to OP to prefix mounted commands like: get-OLMailbox == local get-Mailbox command
